@@ -1,6 +1,6 @@
 # EC AI · Electronic Commerce AI
 
-一款面向天猫 / 淘宝 / 拼多多等平台店铺的 **Windows 桌面版电商数据分析工作台**（单机、离线、一人一份）。
+一款面向天猫平台店铺的 **Windows 桌面版电商数据分析工作台**（单机、离线、一人一份）。
 
 把生意参谋与自制报表「导入 -> 看板 -> AI 评语 -> 日报导出」在本地闭环：数据只存在自己电脑，不花服务器钱，同事间用「数据包」文件互传数据。
 
@@ -75,14 +75,7 @@ npm run dist:win     # 打包 NSIS 安装包（release/）
 - API Key 使用系统安全存储加密，界面只显示「已设置 / 未设置」
 - 日志与诊断包导出会做脱敏
 
-## 文档
 
-- [任务书-详细版.md](docs/任务书-详细版.md)：总纲 + 任务分册 + 防作弊红线
-- [docs/schema.md](docs/schema.md)：数据库字典
-- [docs/数据源清单.md](docs/数据源清单.md)：九源格式说明
-- [docs/坑记录.md](docs/坑记录.md)：历史踩坑与解法
-- [docs/授权机制.md](docs/授权机制.md)：授权与万能解锁机制
-- [PROGRESS.md](docs/PROGRESS.md)：开发进度
 
 ## License
 
