@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root {
+    --bg: #121212;
+    --card: #1a1a1a;
+    --border: #262626;
+    --text: #e6e6e6;
+    --text-2: #9a9a9a;
+    --text-3: #6e6e6e;
+    --accent: #1db954;
+    --accent-soft: rgba(29,185,84,0.12);
+    --warn: #f5a623;
+    --danger: #e5484d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 28px 32px 40px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+  .brand { font-size: 13px; font-weight: 800; letter-spacing: 1.5px; color: var(--accent); }
+  .head h1 { margin: 4px 0 0; font-size: 26px; font-weight: 800; letter-spacing: 0.3px; }
+  .head .sub { margin: 4px 0 0; font-size: 13px; color: var(--text-2); }
+  .head .meta { text-align: right; font-size: 12px; color: var(--text-3); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; }
+  .sec-title { display: flex; align-items: center; gap: 9px; margin: 0 0 4px; font-size: 15px; font-weight: 800; }
+  .sec-title::before { content: ''; width: 4px; height: 15px; border-radius: 2px; background: var(--accent); }
+  .sec-desc { margin: 0 0 14px; font-size: 12px; color: var(--text-2); }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .kpi { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .kpi-label { font-size: 11.5px; color: var(--text-2); }
+  .kpi-value { font-size: 21px; font-weight: 800; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .kpi-delta { font-size: 11.5px; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .up { color: var(--accent); }
+  .down { color: var(--danger); }
+  .flat { color: var(--text-3); }
+  .chart { width: 100%; height: 280px; }
+  .table-wrap { overflow-x: auto; margin-top: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 7px 10px; border-bottom: 1px solid #222; text-align: left; white-space: nowrap; }
+  th { font-size: 11px; color: var(--text-2); font-weight: 600; background: #161616; }
+  td.num, th.num { text-align: right; }
+  .neg { color: var(--danger); }
+  .rule { display: flex; gap: 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px dashed #232323; font-size: 12.5px; }
+  .rule:last-child { border-bottom: none; }
+  .rule-name { color: var(--warn); font-weight: 700; white-space: nowrap; }
+  .rule-evidence { color: var(--text-2); }
+  .cmt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; }
+  .cmt-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .cmt-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .cmt-label { font-size: 12px; font-weight: 800; color: var(--accent); }
+  .cmt-tag { font-size: 10.5px; color: var(--text-3); background: #202020; border-radius: 999px; padding: 1px 8px; }
+  .cmt-text { margin: 0; font-size: 12.5px; color: var(--text); white-space: pre-wrap; }
+  .cmt-summary { border: 1px solid rgba(29,185,84,0.35); background: var(--accent-soft); }
+  .cmt-summary-title { margin: 14px 0 8px; font-size: 13px; font-weight: 800; color: var(--accent); }
+  .foot { text-align: center; font-size: 11.5px; color: var(--text-3); padding-top: 6px; }
+  .empty { color: var(--text-3); font-size: 12.5px; padding: 8px 0; }
+  .lag-alert { padding: 10px 14px; margin-bottom: 16px; border-radius: 12px; background: rgba(245,166,35,0.12); border: 1px solid rgba(245,166,35,0.4); color: var(--warn); font-size: 12.5px; font-weight: 700; }
+  .cov-line { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text-2); margin-bottom: 16px; }
+  .cov-label { color: var(--text-3); }
+  .cov-item { display: inline-flex; align-items: center; gap: 5px; }
+  .cov-cutoff { color: var(--warn); font-weight: 700; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); }
+  .dot.ok { background: var(--accent); }
+  .dot.partial { background: var(--warn); }
+  .cmt-note { color: var(--warn); }
+  @media print {
+    body { padding: 12px 8px; }
+    .card { break-inside: avoid; }
+    .chart { break-inside: avoid; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <div>
+      <div class="brand">EC AI · Electronic Commerce AI</div>
+      <h1>__TITLE__</h1>
+      <div class="sub">店铺：__SHOP__　窗口：__WINDOW_LABEL__（__WINDOW_RANGE__）</div>
+    </div>
+    <div class="meta">导出时间：__EXPORTED_AT__<br>数据来源：本机数据库（EC AI），离线可打开</div>
+  </header>
+  __LAG_HTML__
+  __COVERAGE_HTML__
+  __BODY_HTML__
+  <footer class="foot">本报告由 EC AI 生成 · 数字均来自已导入的真实经营数据，可回溯源文件 · 无外网依赖，离线可查看</footer>
+</div>
+<script>
+/*__ECHARTS_JS__*/
+</script>
+<script>
+window.__REPORT_DATA__ = null;
+(function () {
+  var D = window.__REPORT_DATA__;
+  if (!D || !D.charts) return;
+  function yShort(v) {
+    v = (v || 0) / 100;
+    if (Math.abs(v) >= 10000) return (v / 10000).toFixed(2) + '万';
+    return v.toLocaleString('zh-CN', { maximumFractionDigits: 0 });
+  }
+  function cut(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n) + '…' : s; }
+  function mount(id, option) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var c = echarts.init(el);
+    c.setOption(option);
+    window.__charts = window.__charts || [];
+    window.__charts.push(c);
+  }
+  var axis = { axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } }, axisLabel: { color: '#9a9a9a', fontSize: 11 } };
+  var split = { splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } }, axisLabel: { color: '#9a9a9a', fontSize: 11 } };
+
+  var tr = D.charts.trend;
+  if (tr && tr.dates && tr.dates.length) {
+    mount('chart-trend', {
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis' },
+      legend: { data: ['支付金额', '净销售额', '利润'], textStyle: { color: '#9a9a9a' }, top: 0 },
+      grid: { left: 8, right: 8, top: 36, bottom: 4, containLabel: true },
+      xAxis: Object.assign({ type: 'category', data: tr.dates }, axis),
+      yAxis: Object.assign({ type: 'value' }, split),
+      series: [
+        { name: '支付金额', type: 'bar', barMaxWidth: 24, data: tr.pay, itemStyle: { color: '#1db954', borderRadius: [4, 4, 0, 0] } },
+        { name: '净销售额', type: 'bar', barMaxWidth: 24, data: tr.net, itemStyle: { color: 'rgba(29,185,84,0.35)', borderRadius: [4, 4, 0, 0] } },
+        { name: '利润', type: 'line', smooth: true, symbolSize: 6, data: tr.profit, lineStyle: { color: '#f5a623' }, itemStyle: { color: '#f5a623' } }
+      ]
+    });
+  }
+  var pr = D.charts.product;
+  if (pr && pr.names && pr.names.length) {
+    mount('chart-product', {
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 8, right: 30, top: 8, bottom: 4, containLabel: true },
+      xAxis: Object.assign({ type: 'value' }, split),
+      yAxis: Object.assign({ type: 'category', inverse: true, data: pr.names }, axis),
+      series: [{ name: '支付金额', type: 'bar', barMaxWidth: 16, data: pr.pay, itemStyle: { color: '#1db954', borderRadius: [0, 4, 4, 0] }, label: { show: true, position: 'right', color: '#9a9a9a', fontSize: 10, formatter: yShort } }]
+    });
+  }
+  var pm = D.charts.promo;
+  if (pm && pm.names && pm.names.length) {
+    mount('chart-promo', {
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis' },
+      legend: { data: ['推广花费', 'ROI'], textStyle: { color: '#9a9a9a' }, top: 0 },
+      grid: { left: 8, right: 8, top: 36, bottom: 4, containLabel: true },
+      xAxis: Object.assign({ type: 'category', data: pm.names }, axis),
+      yAxis: Object.assign({ type: 'value' }, split),
+      series: [
+        { name: '推广花费', type: 'bar', barMaxWidth: 20, data: pm.cost, itemStyle: { color: '#1db954', borderRadius: [4, 4, 0, 0] } },
+        { name: 'ROI', type: 'line', smooth: true, symbolSize: 6, data: pm.roas, lineStyle: { color: '#f5a623' }, itemStyle: { color: '#f5a623' } }
+      ]
+    });
+  }
+  var rf = D.charts.refund;
+  if (rf && rf.names && rf.names.length) {
+    mount('chart-refund', {
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 8, right: 30, top: 8, bottom: 4, containLabel: true },
+      xAxis: Object.assign({ type: 'value' }, split),
+      yAxis: Object.assign({ type: 'category', inverse: true, data: rf.names }, axis),
+      series: [{ name: '退款金额', type: 'bar', barMaxWidth: 16, data: rf.fen, itemStyle: { color: '#e5484d', borderRadius: [0, 4, 4, 0] }, label: { show: true, position: 'right', color: '#9a9a9a', fontSize: 10, formatter: yShort } }]
+    });
+  }
+  var kw = D.charts.keyword;
+  if (kw && kw.names && kw.names.length) {
+    mount('chart-keyword', {
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 8, right: 30, top: 8, bottom: 4, containLabel: true },
+      xAxis: Object.assign({ type: 'value' }, split),
+      yAxis: Object.assign({ type: 'category', inverse: true, data: kw.names }, axis),
+      series: [{ name: '访客数', type: 'bar', barMaxWidth: 16, data: kw.visitors, itemStyle: { color: '#1db954', borderRadius: [0, 4, 4, 0] }, label: { show: true, position: 'right', color: '#9a9a9a', fontSize: 10 } }]
+    });
+  }
+  window.addEventListener('resize', function () { (window.__charts || []).forEach(function (c) { c.resize(); }); });
+})();
+</script>
+</body>
+</html>

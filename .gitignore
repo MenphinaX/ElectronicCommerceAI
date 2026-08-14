@@ -1,0 +1,12 @@
+# 本地生成物，勿提交
+node_modules/
+out/
+release/
+dist/
+*.log
+*.tsbuildinfo
+*.pid
+shots/
+.tmp-*/
+.DS_Store
+Thumbs.db
