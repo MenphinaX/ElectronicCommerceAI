@@ -89,7 +89,7 @@ async function main() {
     console.log('ASSERT ' + (cond ? 'PASS' : 'FAIL') + ' ' + name + (extra ? ' ' + extra : ''))
   }
 
-  // ---------- 前置：开屏默认开、每日未消费；引导未完成（让引导页真实出现）；预置真实文件头像 ----------
+  // ---------- 前置：开屏默认开（每次启动显示）；引导未完成（让引导页真实出现）；预置真实文件头像 ----------
   const st = JSON.parse(readFileSync(settingsPath, 'utf8'))
   st.onboardingDone = false
   st.splashEnabled = true
@@ -121,7 +121,8 @@ async function main() {
   ok('splash-pending', pending2 === true, String(pending2))
   ok('splash-rendered', rendered2 === true, String(rendered2))
   ok('splash-content', !!content2 && !!content2.name && !!content2.greet && !!content2.sub && !!content2.quote && content2.avatarImg === true, JSON.stringify(content2))
-  ok('splash-every-launch', !!after2 && after2.splashPending === true, JSON.stringify(after2))
+  // 任务 4M：每次启动语义（settings.splashPending 恒 true）+ 进入后真实卸载（.splash 消失、.app-body 出现）
+  ok('splash-every-launch', !!after2 && after2.splashPending === true && after2.splashGone === true && after2.appBody === true, JSON.stringify(after2))
   ok('splash-no-err', !grab(c2, 'TASK4F-SPLASH-ERR').length, grab(c2, 'TASK4F-SPLASH-ERR').join('|'))
 
   // ---------- 子流程 3：主流程（①②③④⑤⑥，含真实质检流） ----------

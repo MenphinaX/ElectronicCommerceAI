@@ -400,7 +400,10 @@ export async function runAutoshot(): Promise<void> {
           }
         }
         const after = settings.splashPending()
-        await log('QA4F-SPLASH-AFTER-ENTER:' + JSON.stringify({ splashPending: after, lastSplashDate: settings.lastSplashDate, nowDate: settings.now.dateStr }))
+        // 任务 4M：进入后必须真实卸载开屏并渲染工作台（settings 层 pending 每次启动恒 true，卸载靠 App 显式状态）
+        const splashGone = !document.querySelector('.splash')
+        const appBody = !!document.querySelector('.app-body')
+        await log('QA4F-SPLASH-AFTER-ENTER:' + JSON.stringify({ splashPending: after, splashGone, appBody, lastSplashDate: settings.lastSplashDate, nowDate: settings.now.dateStr }))
         await log('TASK4F-SPLASH-DONE')
       } catch (e) {
         await log('TASK4F-SPLASH-ERR:' + String((e as Error)?.message ?? e))

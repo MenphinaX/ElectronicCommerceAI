@@ -1,6 +1,6 @@
 // 任务 4F 回归测试（TDD）：③质检历史导出 CSV 汇总 ④头像超大图 1:1 裁切+压缩≤512px ⑤开屏默认开启/每次启动 ⑥qa_runs 客服数列 + schema v8 迁移
 import { describe, expect, it } from 'vitest'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { AppDatabase } from '../src/main/db/database'
@@ -95,9 +95,10 @@ describe('任务4F ⑤ 开屏欢迎页：默认开启、每次启动、设置可
     expect(shouldShowSplash({ splashEnabled: true, onboardingDone: true, nowDate: '2026-08-14', lastSplashDate: '' })).toBe(true)
   })
 
-  it('shouldShowSplash：同日已看 → false（每次启动）', () => {
+  it('shouldShowSplash：同日已看 → 仍 true（每次启动，日期不参与判断）', () => {
     expect(shouldShowSplash({ splashEnabled: true, onboardingDone: true, nowDate: '2026-08-14', lastSplashDate: '2026-08-14' })).toBe(true)
     expect(shouldShowSplash({ splashEnabled: true, onboardingDone: true, nowDate: '2026-08-15', lastSplashDate: '2026-08-14' })).toBe(true)
+    expect(shouldShowSplash({ splashEnabled: true, onboardingDone: true, nowDate: '2026-08-15', lastSplashDate: '2099-01-01' })).toBe(true)
   })
 
   it('shouldShowSplash：设置关闭或引导未完成 → false', () => {
@@ -214,5 +215,41 @@ describe('任务4F ② 质检分批与截断续跑：默认分批更小、截断
     expect(out).toContain('报告')
     expect(out).toContain('截断')
     expect(out).toContain('已保留全部已生成内容')
+  })
+})
+
+// 任务 4M 开屏进入状态（0.1.3 回归）：点击/自动进入后必须显式卸载，进工作台
+describe('任务4M 开屏进入状态：splashEntered 显式卸载 + 每次启动语义', () => {
+  it('App.vue：splashEntered = ref(false) 一次性状态存在', () => {
+    const app = readFileSync(join(__dirname, '../src/renderer/src/App.vue'), 'utf8')
+    expect(app).toContain('splashEntered = ref(false)')
+  })
+
+  it('App.vue：splashPending 含 !splashEntered.value（进入后卸载，不靠日期副作用；computed 内必须解包 ref）', () => {
+    const app = readFileSync(join(__dirname, '../src/renderer/src/App.vue'), 'utf8')
+    expect(app).toContain('settings.loaded && settings.splashPending() && !splashEntered.value')
+    // 禁止裸 ref：!splashEntered（对象恒 truthy）会令开屏永不出现在初始渲染
+    const line = app.split('\n').find((l) => l.includes('splashPending = computed'))
+    expect(line ?? '').not.toMatch(/&&\s*!splashEntered\s*\)/)
+  })
+
+  it('App.vue：onSplashEnter 置 splashEntered = true（非空函数）', () => {
+    const app = readFileSync(join(__dirname, '../src/renderer/src/App.vue'), 'utf8')
+    const i = app.indexOf('function onSplashEnter')
+    expect(i).toBeGreaterThan(-1)
+    const fn = app.slice(i, i + 200)
+    expect(fn).toContain('splashEntered.value = true')
+  })
+
+  it('SplashGreeting enter() 只 emit 不自写日期（每次启动语义）', () => {
+    const src = readFileSync(join(__dirname, '../src/renderer/src/components/splash/SplashGreeting.vue'), 'utf8')
+    expect(src).not.toContain('setLastSplashDate')
+    expect(src).toContain("emit('enter')")
+  })
+
+  it('OnboardingWizard finish/skip 不再写 lastSplashDate，只置引导完成', () => {
+    const src = readFileSync(join(__dirname, '../src/renderer/src/components/onboarding/OnboardingWizard.vue'), 'utf8')
+    expect(src).not.toContain('setLastSplashDate')
+    expect(src).toContain('setOnboardingDone(true)')
   })
 })

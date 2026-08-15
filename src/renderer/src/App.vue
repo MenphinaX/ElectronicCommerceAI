@@ -1,5 +1,5 @@
-﻿<script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TitleBar from './components/TitleBar.vue'
 import SidebarNav from './components/SidebarNav.vue'
@@ -24,7 +24,9 @@ const router = useRouter()
 
 const lockRequired = computed(() => auth.ok && settings.passwordEnabled && !settings.lockUnlocked)
 const gate = computed(() => gatePhase(auth.loaded, auth.ok))
-const splashPending = computed(() => settings.loaded && settings.splashPending())
+const splashEntered = ref(false)
+// 任务 4M：开屏「每次启动显示」，进入由父组件显式状态卸载（不靠日期副作用）；splashEntered 一次性置位
+const splashPending = computed(() => settings.loaded && settings.splashPending() && !splashEntered.value)
 
 onMounted(() => {
   // 任务 4H：settings 与 auth 并行加载（wmic 采集已预预热），门禁 pending 态不闪「未授权」
@@ -66,7 +68,7 @@ function onUnlocked(): void {
 }
 
 function onSplashEnter(): void {
-  // 开屏已记录日期，直接进入主界面
+  splashEntered.value = true
 }
 </script>
 
