@@ -158,7 +158,7 @@ export const useSettingsStore = defineStore('settings', {
       }
       return { ok: true }
     },
-    /** 开屏问候是否待展示（每天首次启动，设置可关闭；mock 日期由主进程 system:now 提供） */
+    /** 开屏问候是否待展示（每次启动，设置可关闭；mock 日期由主进程 system:now 提供） */
     splashPending(): boolean {
       return shouldShowSplash({
         splashEnabled: this.splashEnabled,

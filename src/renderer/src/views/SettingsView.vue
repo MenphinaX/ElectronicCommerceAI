@@ -142,7 +142,7 @@ async function removeBackground(): Promise<void> {
       <div class="setting-row">
         <div class="setting-text">
           <h3 class="block-title">开屏欢迎页</h3>
-          <p class="block-desc">每天首次启动显示问候页（头像/用户名/时段问候/电商语录）；关闭后直接进入主界面</p>
+          <p class="block-desc">每次启动显示问候页（头像/用户名/时段问候/电商语录）；关闭后直接进入主界面</p>
         </div>
         <button
           class="switch"

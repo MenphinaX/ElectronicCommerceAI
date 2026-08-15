@@ -110,9 +110,9 @@ export async function runAutoshot(): Promise<void> {
       await sleep(1800)
       await shot('42-qa-prompt')
       ;(window as unknown as { __QA_ACCEPT_PATHS__?: string[] }).__QA_ACCEPT_PATHS__ = [
-        'C:/Users/Public/Desktop/聊天记录/聊天记录1.csv',
-        'C:/Users/Public/Desktop/聊天记录/聊天记录2.txt',
-        'C:/Users/Public/Desktop/聊天记录/聊天记录3.json'
+        'C:/Users/Administrator/Desktop/聊天记录/聊天记录1.csv',
+        'C:/Users/Administrator/Desktop/聊天记录/聊天记录2.txt',
+        'C:/Users/Administrator/Desktop/聊天记录/聊天记录3.json'
       ]
       await router.push('/chat')
       await sleep(300)
@@ -177,9 +177,9 @@ export async function runAutoshot(): Promise<void> {
 
       // ---------- 3) 聊天质检：三格式解析 + 流式报告 + 复制/导出 + 历史 ----------
       const qaPaths = [
-        'C:/Users/Public/Desktop/聊天记录/聊天记录1.csv',
-        'C:/Users/Public/Desktop/聊天记录/聊天记录2.txt',
-        'C:/Users/Public/Desktop/聊天记录/聊天记录3.json'
+        'C:/Users/Administrator/Desktop/聊天记录/聊天记录1.csv',
+        'C:/Users/Administrator/Desktop/聊天记录/聊天记录2.txt',
+        'C:/Users/Administrator/Desktop/聊天记录/聊天记录3.json'
       ]
       ;(window as unknown as { __QA_ACCEPT_PATHS__?: string[] }).__QA_ACCEPT_PATHS__ = qaPaths
       await router.push('/qa')
@@ -270,9 +270,9 @@ export async function runAutoshot(): Promise<void> {
       // ---------- 5) 附件上传：csv + xlsx + 图片 ----------
       await chat.create()
       const attPaths = [
-        'C:/Users/Public/Desktop/模板/2026-08-11.csv',
-        'C:/Users/Public/Desktop/模板/店铺DSR数据_2026-08-11.xlsx',
-        'C:/Users/Public/AppData/Roaming/EC AI/product-images/1/974661273911.png'
+        'C:/Users/Administrator/Desktop/模板/2026-08-11.csv',
+        'C:/Users/Administrator/Desktop/模板/店铺DSR数据_2026-08-11.xlsx',
+        'C:/Users/Administrator/AppData/Roaming/EC AI/product-images/1/974661273911.png'
       ]
       await chat.addFiles(attPaths)
       await log('TASK6-LIVE-CHAT-ATT:' + JSON.stringify(chat.attachments.map((a) => ({ name: a.name, kind: a.kind, textLen: a.text ? a.text.length : 0, hasImage: !!a.base64, err: a.error ?? null }))))
@@ -376,7 +376,7 @@ export async function runAutoshot(): Promise<void> {
     }
 
     if (subMode === 'task4f-splash') {
-      // 任务 4F ⑤：开屏欢迎页——头像/用户名/时段问候/语录齐全，每日一次，设置可关
+      // 任务 4F ⑤：开屏欢迎页——头像/用户名/时段问候/语录齐全；2026-08-15 起每次启动显示，设置可关
       try {
         await settings.setTheme('dark')
         await sleep(700)
@@ -422,7 +422,7 @@ export async function runAutoshot(): Promise<void> {
         }
         // 任务 4F 验收：按用户指示质检只提交一份真实文件（聊天记录3.json，25 会话/781 条），减少模型消耗
         const qaPaths4f = [
-          'C:/Users/Public/Desktop/聊天记录/聊天记录3.json'
+          'C:/Users/Administrator/Desktop/聊天记录/聊天记录3.json'
         ]
         const q = new URLSearchParams(window.location.search)
         await settings.setTheme('dark')
@@ -794,9 +794,9 @@ export async function runAutoshot(): Promise<void> {
       try {
         const GITHUB_URL = 'https://github.com/jnMetaCode/agency-agents-zh'
         const qaPaths4d = [
-          'C:/Users/Public/Desktop/聊天记录/聊天记录1.csv',
-          'C:/Users/Public/Desktop/聊天记录/聊天记录2.txt',
-          'C:/Users/Public/Desktop/聊天记录/聊天记录3.json'
+          'C:/Users/Administrator/Desktop/聊天记录/聊天记录1.csv',
+          'C:/Users/Administrator/Desktop/聊天记录/聊天记录2.txt',
+          'C:/Users/Administrator/Desktop/聊天记录/聊天记录3.json'
         ]
         const btnByText = (sel: string, text: string): HTMLElement | null =>
           [...document.querySelectorAll<HTMLElement>(sel)].find((b) => (b.textContent ?? '').includes(text)) ?? null

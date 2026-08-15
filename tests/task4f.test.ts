@@ -1,4 +1,4 @@
-// 任务 4F 回归测试（TDD）：③质检历史导出 CSV 汇总 ④头像超大图 1:1 裁切+压缩≤512px ⑤开屏默认开启/每日一次 ⑥qa_runs 客服数列 + schema v8 迁移
+// 任务 4F 回归测试（TDD）：③质检历史导出 CSV 汇总 ④头像超大图 1:1 裁切+压缩≤512px ⑤开屏默认开启/每次启动 ⑥qa_runs 客服数列 + schema v8 迁移
 import { describe, expect, it } from 'vitest'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -90,13 +90,13 @@ describe('任务4F ③ 质检历史导出：批量汇总 CSV', () => {
   })
 })
 
-describe('任务4F ⑤ 开屏欢迎页：默认开启、每日一次、设置可关', () => {
+describe('任务4F ⑤ 开屏欢迎页：默认开启、每次启动、设置可关', () => {
   it('shouldShowSplash：默认开启且当日未看 → true', () => {
     expect(shouldShowSplash({ splashEnabled: true, onboardingDone: true, nowDate: '2026-08-14', lastSplashDate: '' })).toBe(true)
   })
 
-  it('shouldShowSplash：同日已看 → false（每日一次）', () => {
-    expect(shouldShowSplash({ splashEnabled: true, onboardingDone: true, nowDate: '2026-08-14', lastSplashDate: '2026-08-14' })).toBe(false)
+  it('shouldShowSplash：同日已看 → false（每次启动）', () => {
+    expect(shouldShowSplash({ splashEnabled: true, onboardingDone: true, nowDate: '2026-08-14', lastSplashDate: '2026-08-14' })).toBe(true)
     expect(shouldShowSplash({ splashEnabled: true, onboardingDone: true, nowDate: '2026-08-15', lastSplashDate: '2026-08-14' })).toBe(true)
   })
 

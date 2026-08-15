@@ -1,4 +1,4 @@
-﻿// 开屏欢迎页显示与停留时长（任务 4F ⑤ / 4J ①）：纯函数便于单测
+﻿// 开屏欢迎页显示与停留时长（任务 4F ⑤ / 4J ① / 2026-08-15 改为每次启动）：纯函数便于单测
 export interface SplashState {
   splashEnabled: boolean
   onboardingDone: boolean
@@ -7,7 +7,8 @@ export interface SplashState {
 }
 
 export function shouldShowSplash(s: SplashState): boolean {
-  return s.splashEnabled && s.onboardingDone && s.nowDate !== s.lastSplashDate
+  // 2026-08-15 用户要求：每次启动都显示开屏，不再限制每日一次
+  return s.splashEnabled && s.onboardingDone
 }
 
 // 任务 4J ①：开屏停留时长选项（秒），0 = 永不自动进入；默认 4 秒

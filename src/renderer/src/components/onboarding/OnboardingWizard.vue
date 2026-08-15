@@ -190,7 +190,6 @@ watch(step, (v) => {
 async function finish(): Promise<void> {
   await saveProfile()
   await settings.setOnboardingDone(true)
-  await settings.setLastSplashDate(settings.now.dateStr)
   emit('done')
   void router.push('/dashboard')
 }
@@ -198,7 +197,6 @@ async function finish(): Promise<void> {
 async function skip(): Promise<void> {
   await saveProfile()
   await settings.setOnboardingDone(true)
-  await settings.setLastSplashDate(settings.now.dateStr)
   emit('done')
   void router.push('/dashboard')
 }

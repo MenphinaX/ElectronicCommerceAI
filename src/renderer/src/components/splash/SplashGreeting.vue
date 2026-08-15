@@ -1,4 +1,4 @@
-﻿<!-- 开屏问候页（任务 10）：每天首次启动显示（设置可关），按设置停留后自动进入，点击任意处立即进入 -->
+﻿<!-- 开屏问候页（任务 10 / 2026-08-15）：每次启动显示（设置可关），按设置停留后自动进入，点击任意处立即进入 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import AppIcon from '../AppIcon.vue'
@@ -54,7 +54,6 @@ onMounted(async () => {
 function enter(): void {
   if (entering.value) return
   entering.value = true
-  void settings.setLastSplashDate(settings.now.dateStr)
   emit('enter')
 }
 </script>
