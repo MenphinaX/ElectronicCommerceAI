@@ -120,7 +120,7 @@ describe('任务4D ③ 质检分批：按会话分批 + maxTokens 上限', () =>
   })
 
   it('buildQaBatchPrompt：含批次信息、覆盖会话、续写指令', () => {
-    const stats = { sessions: 30, agents: ['客服A'], start: 'a', end: 'b' }
+    const stats = { sessions: 30, agents: ['风铃'], start: 'a', end: 'b' }
     const batch = { sessions: ['S1', 'S2'], records: mkSession('S1', 2).concat(mkSession('S2', 2)), part: undefined }
     const p = buildQaBatchPrompt('请重点检查响应及时性', batch, {
       batchIndex: 2, batchCount: 5, totalRecords: 2351, allStats: stats
@@ -134,7 +134,7 @@ describe('任务4D ③ 质检分批：按会话分批 + maxTokens 上限', () =>
   })
 
   it('buildQaSummaryPrompt：含统计与「整体质检总结」指令、分析要点', () => {
-    const stats = { sessions: 30, agents: ['客服A'], start: 'a', end: 'b' }
+    const stats = { sessions: 30, agents: ['风铃'], start: 'a', end: 'b' }
     const p = buildQaSummaryPrompt('请重点检查话术合规', ['分析1', '分析2'], { totalRecords: 2351, allStats: stats })
     expect(p.system).toContain('汇总')
     expect(p.user).toContain('整体质检总结')

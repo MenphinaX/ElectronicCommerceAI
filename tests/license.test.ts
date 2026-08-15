@@ -1,6 +1,6 @@
 // 任务 9 授权与激活（离线）TDD 测试：验签/机器码/有效期/万能解锁/容差/防篡改
 import { describe, expect, it } from 'vitest'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   canonicalLicense, generateKeyPair, parseMachineCode, signLicensePayload, verifyLicenseSignature,
@@ -10,8 +10,6 @@ import { LICENSE_PUBLIC_KEY_FINGERPRINT, LICENSE_PUBLIC_KEY_PEM } from '../src/m
 import { evaluateLicense, type LicenseState } from '../src/main/auth/license'
 
 const NOW = '2026-08-14'
-// 授权工具源码单独分发（含私钥，勿公开）；主程序开源仓库无 tools/ 时跳过跨端配对测试
-const HAS_LICENSE_TOOL = existsSync(join(process.cwd(), 'tools/license-tool/keys/admin-private.pem'))
 const key = generateKeyPair()
 const pub = key.publicKey
 const priv = key.privateKey
@@ -58,17 +56,17 @@ describe('授权核心：签名/验签', () => {
     const sig2 = signLicensePayload(priv, payload())
     expect(sig1).toBe(sig2)
   })
-  it.skipIf(!HAS_LICENSE_TOOL)('嵌入的公钥与授权工具私钥配对（tools/license-tool/keys/admin-public.pem）', () => {
+  it('嵌入的公钥与授权工具私钥配对（tools/license-tool/keys/admin-public.pem）', () => {
     const pem = readFileSync(join(process.cwd(), 'tools/license-tool/keys/admin-public.pem'), 'utf8').trim()
     expect(LICENSE_PUBLIC_KEY_PEM).toBe(pem)
     expect(LICENSE_PUBLIC_KEY_FINGERPRINT.length).toBeGreaterThanOrEqual(16)
   })
-  it.skipIf(!HAS_LICENSE_TOOL)('授权工具 vendor 副本与主应用 license-core 内容一致（跨端验签一致性）', () => {
+  it('授权工具 vendor 副本与主应用 license-core 内容一致（跨端验签一致性）', () => {
     const a = readFileSync(join(process.cwd(), 'src/main/auth/license-core.mjs'), 'utf8')
     const b = readFileSync(join(process.cwd(), 'tools/license-tool/vendor/license-core.mjs'), 'utf8')
     expect(b).toBe(a)
   })
-  it.skipIf(!HAS_LICENSE_TOOL)('授权工具私钥签发 → 应用内置公钥验签通过（真实配对）', () => {
+  it('授权工具私钥签发 → 应用内置公钥验签通过（真实配对）', () => {
     const realPriv = readFileSync(join(process.cwd(), 'tools/license-tool/keys/admin-private.pem'), 'utf8')
     const p = payload()
     const sig = signLicensePayload(realPriv, p)

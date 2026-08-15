@@ -27,7 +27,7 @@ const CS_TO = '2026-08-13'
 describe('任务4C：客服绩效父行子行', () => {
   it('csBlock 每行带 date 列（真实库 cs_daily 8 条，前端按日期过滤的根因）', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadCs(db, shopId)
     const rows = csBlock(db, shopId, CS_FROM, CS_TO)
     expect(rows).toHaveLength(8)
@@ -38,7 +38,7 @@ describe('任务4C：客服绩效父行子行', () => {
 
   it('csGroups：带 date 的行按日期归组，父行展开得 8 明细 + 全店合计（真实 fixture 形状）', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadCs(db, shopId)
     const staff = csBlock(db, shopId, CS_FROM, CS_TO)
     const groups = csGroups(['2026-08-09'], staff)
@@ -58,7 +58,7 @@ describe('任务4C：客服绩效父行子行', () => {
 
   it('csGroups：缺 date 列的行（修复前形状）归组后子行为空——印证用户症状', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadCs(db, shopId)
     const staff = csBlock(db, shopId, CS_FROM, CS_TO).map((r) => {
       const copy = { ...r }

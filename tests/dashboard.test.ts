@@ -33,7 +33,7 @@ function loadReal(db: AppDatabase, shopId: number): void {
 describe('看板复刻：新查询（蓝本 04/05/06/08）', () => {
   it('推广明细 TOP12（蓝本 05）：单日快照按计划，banner 用 top 求和', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const rows = promoDetail(db, 1, '2026-08-07', '2026-08-13')
     expect(rows).toHaveLength(12)
@@ -53,7 +53,7 @@ describe('看板复刻：新查询（蓝本 04/05/06/08）', () => {
 
   it('咨询 TOP（蓝本 08）：最近一日快照', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const c = consultTop(db, shopId, '2026-08-11')
     expect(c.total).toBe(30)
@@ -65,7 +65,7 @@ describe('看板复刻：新查询（蓝本 04/05/06/08）', () => {
 
   it('退款明细行（蓝本 06）：窗口完结 121 笔 / 25,385.48 元', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const rows = refundRows(db, shopId, '2026-08-07', '2026-08-13')
     expect(rows).toHaveLength(121)
@@ -80,7 +80,7 @@ describe('看板复刻：新查询（蓝本 04/05/06/08）', () => {
 
   it('商品动销计数（蓝本 04 副标题）', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const c = productCounts(db, shopId, '2026-08-07', '2026-08-13')
     expect(c.total).toBe(112)
@@ -113,7 +113,7 @@ describe('看板：窗口口径', () => {
 describe('看板：核心 KPI 聚合（真实九源数据）', () => {
   it('近7/15/30 天支付金额与源文件一致（基准 412,208.36 元）', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const full = kpiBlock(db, shopId, { mode: '30', label: '近30天', days: 30, start: '2026-07-12', end: '2026-08-11', prevStart: '2026-06-12', prevEnd: '2026-07-11' })
     expect(full.payAmountFen).toBe(41220836)

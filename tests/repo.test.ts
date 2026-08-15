@@ -32,8 +32,8 @@ describe('仓库层：settings / shops / imports', () => {
 
   it('shops 按名称幂等 upsert', () => {
     const db = freshDb()
-    const id1 = upsertShop(db, { name: 'XX旗舰店', platform: '天猫' })
-    const id2 = upsertShop(db, { name: 'XX旗舰店' })
+    const id1 = upsertShop(db, { name: '佰泰康车品旗舰店', platform: '天猫' })
+    const id2 = upsertShop(db, { name: '佰泰康车品旗舰店' })
     expect(id1).toBe(id2)
     const shops = listShops(db)
     expect(shops).toHaveLength(1)

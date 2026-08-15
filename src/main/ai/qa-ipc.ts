@@ -11,8 +11,7 @@ import {
   parseQaText, qaStats, splitQaBatches, withQaTruncationNote, type QaMessage
 } from './qa-service'
 
-// 开源版不内置本机绝对路径；默认提示词由界面内置模板/用户自行填写（原开发机路径已移除）
-const DEFAULT_PROMPT_FILE = ''
+const DEFAULT_PROMPT_FILE = 'C:\\Users\\Administrator\\Desktop\\客服聊天记录质检提示词.txt'
 
 function loadDefaultPrompt(): string {
   try {

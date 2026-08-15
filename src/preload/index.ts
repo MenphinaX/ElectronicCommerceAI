@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, webUtils } from 'electron'
+﻿import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 // 渲染层唯一入口：窗口控制 / 设置读写 / 验收截图
 const api = {
@@ -141,8 +141,10 @@ const api = {
     remove: (id: number): Promise<boolean> => ipcRenderer.invoke('models:delete', id),
     setDefault: (id: number | null): Promise<boolean> => ipcRenderer.invoke('models:set-default', id),
     getDefault: (): Promise<number | null> => ipcRenderer.invoke('models:get-default'),
-    test: (id: number): Promise<{ ok: boolean; elapsedMs: number; message?: string; model?: string }> =>
-      ipcRenderer.invoke('models:test', id)
+    test: (id: number): Promise<{ ok: boolean; elapsedMs: number; message?: string; note?: string; model?: string }> =>
+      ipcRenderer.invoke('models:test', id),
+    fetchModels: (input: { baseUrl: string; apiKey: string; provider?: string }): Promise<{ ok: boolean; models?: string[]; error?: string }> =>
+      ipcRenderer.invoke('models:fetch-list', input)
   },
   skills: {
     list: (): Promise<{ skills: Array<Record<string, unknown>>; bindings: Array<Record<string, unknown>>; modules: string[] }> =>

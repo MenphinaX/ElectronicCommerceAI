@@ -4,7 +4,7 @@ const { app, nativeImage } = require('electron')
 const fs = require('fs')
 const path = require('path')
 
-const SRC = 'C:/Users/Public/Desktop/PixPin_2026-08-14_17-00-55.png'
+const SRC = 'C:/Users/Administrator/Desktop/PixPin_2026-08-14_17-00-55.png'
 const root = path.resolve(__dirname, '..')
 const SIZES = [16, 24, 32, 48, 64, 128, 256]
 

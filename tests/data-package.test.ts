@@ -69,7 +69,7 @@ describe('数据包：常量与表清单', async () => {
 describe('数据包：导出', async () => {
   it('生成 zip（manifest.json + ecai-data.db），manifest 行数与库一致、校验和可复算', async () => {
     const src = freshDb('export')
-    const shopId = upsertShop(src.db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(src.db, { name: '佰泰康车品旗舰店' })
     seedShop(src.db, shopId, ['2026-08-01', '2026-08-02'])
     seedRefunds(src.db, shopId, 3)
     const out = join(src.dir, 'out.zip')
@@ -79,7 +79,7 @@ describe('数据包：导出', async () => {
     const m = zipManifest(out)
     expect(m.format).toBe(PACKAGE_FORMAT)
     expect(m.formatVersion).toBe(PACKAGE_FORMAT_VERSION)
-    expect(m.shop.name).toBe('XX旗舰店')
+    expect(m.shop.name).toBe('佰泰康车品旗舰店')
     expect(m.tables.daily_metrics.rows).toBe(2)
     expect(m.tables.product_daily.rows).toBe(2)
     expect(m.tables.promo_daily.rows).toBe(2)
@@ -112,7 +112,7 @@ describe('数据包：导出', async () => {
 describe('数据包：导入往返', async () => {
   it('导出→清库（全新库）→导入：各表行数与导出前一致，店铺自动创建', async () => {
     const src = freshDb('src')
-    const shopId = upsertShop(src.db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(src.db, { name: '佰泰康车品旗舰店' })
     seedShop(src.db, shopId, ['2026-08-01', '2026-08-02', '2026-08-03'])
     seedRefunds(src.db, shopId, 5)
     const out = join(src.dir, 'out.zip')
@@ -123,7 +123,7 @@ describe('数据包：导入往返', async () => {
     const result = importDataPackage({ db: tgt.db, imagesDir: imagesDir(tgt.dir), zipPath: out })
     expect(result.ok).toBe(true)
     expect(result.shopCreated).toBe(true)
-    expect(result.shopName).toBe('XX旗舰店')
+    expect(result.shopName).toBe('佰泰康车品旗舰店')
     const tgtShopId = result.shopId
     for (const meta of PACKAGE_TABLES) {
       if (meta.table === 'shops') continue
@@ -171,13 +171,13 @@ describe('数据包：导入往返', async () => {
 
   it('店铺已存在则合并：不新建店铺行，数据并入已有店铺', async () => {
     const src = freshDb('src3')
-    const shopId = upsertShop(src.db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(src.db, { name: '佰泰康车品旗舰店' })
     seedShop(src.db, shopId, ['2026-08-01'])
     const out = join(src.dir, 'out.zip')
     await exportDataPackage({ src: src.db, imagesDir: imagesDir(src.dir), outZipPath: out, options: { shopId, appVersion: '0.0.1' } })
 
     const tgt = freshDb('tgt3')
-    const existing = upsertShop(tgt.db, { name: 'XX旗舰店' })
+    const existing = upsertShop(tgt.db, { name: '佰泰康车品旗舰店' })
     const r = importDataPackage({ db: tgt.db, imagesDir: imagesDir(tgt.dir), zipPath: out })
     expect(r.shopCreated).toBe(false)
     expect(r.shopId).toBe(existing)
@@ -237,9 +237,9 @@ describe('数据包：密码', async () => {
 describe('数据包：商品图片还原', async () => {
   it('源店铺 id≠目标店铺 id：图片文件与绑定记录完整还原，rel_path 重写', async () => {
     const src = freshDb('imgsrc')
-    // 前面 4 个占位店让「XX旗舰店」获得 id=5，与目标库分配的 id 错开，验证 rel_path 真实重写
+    // 前面 4 个占位店让「佰泰康车品旗舰店」获得 id=5，与目标库分配的 id 错开，验证 rel_path 真实重写
     for (const n of ['A店', 'B店', 'C店', 'D店']) upsertShop(src.db, { name: n })
-    const shopId = upsertShop(src.db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(src.db, { name: '佰泰康车品旗舰店' })
     seedShop(src.db, shopId, ['2026-08-01'])
     const bytes = Buffer.from('fake-png-bytes-任务8')
     saveProductImage(src.db, imagesDir(src.dir), { shopId, productId: '1001', bytes, origName: '主图.png' }, fakeProcess)
@@ -305,7 +305,7 @@ describe('数据包：校验和真实校验', async () => {
 
   it('导入不悄悄丢数据：完整往返行数逐表一致（含 refund/cs/keywords）', async () => {
     const src = freshDb('full')
-    const shopId = upsertShop(src.db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(src.db, { name: '佰泰康车品旗舰店' })
     seedShop(src.db, shopId, ['2026-08-01', '2026-08-02', '2026-08-03', '2026-08-04'])
     seedRefunds(src.db, shopId, 6)
     const out = join(src.dir, 'out.zip')

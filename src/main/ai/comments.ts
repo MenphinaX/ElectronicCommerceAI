@@ -10,19 +10,30 @@ export interface CommentBlock {
   label: string
   skillModules: string[]
   builtinFallback: string
+  /** 模块分析框架：看什么指标/达标线/怎么诊断/怎么给动作（内置主导，人设仅补充） */
+  framework: string
 }
 
 // 动态模块：评语内嵌各区块卡片；skillModules = module_skills 用于查找绑定的模块（取第一个有绑定的）
 export const COMMENT_BLOCKS: CommentBlock[] = [
-  { module: '摘要', label: '摘要', skillModules: ['全店'], builtinFallback: '通用分析顾问' },
-  { module: '指标', label: '核心指标', skillModules: ['全店'], builtinFallback: '通用分析顾问' },
-  { module: '趋势', label: '经营趋势', skillModules: ['全店'], builtinFallback: '通用分析顾问' },
-  { module: '商品', label: '单品分析', skillModules: ['单品'], builtinFallback: '通用分析顾问' },
-  { module: '推广', label: '推广分析', skillModules: ['推广'], builtinFallback: '通用分析顾问' },
-  { module: '退款', label: '退款分析', skillModules: ['全店'], builtinFallback: '通用分析顾问' },
-  { module: '客服DSR', label: 'DSR 与客服', skillModules: ['客服', 'DSR'], builtinFallback: '通用分析顾问' },
-  { module: '搜索词', label: '搜索词', skillModules: ['搜索词'], builtinFallback: '通用分析顾问' },
-  { module: '建议', label: '建议动作', skillModules: ['指南'], builtinFallback: '通用分析顾问' }
+  { module: '摘要', label: '摘要', skillModules: ['全店'], builtinFallback: '通用分析顾问',
+    framework: '先看整体盘子：支付金额/净销售额/利润/访客/退款率/推广费占比及环比。达标线：支付与访客环比不低于 -20%，退款率不高于店铺均值，利润为正。诊断顺序：先判断整体环比方向，再定位拖累项（退款、流量、推广），每条问题必须带具体数字。动作按「先保利润、再恢复流量、后优化成本」排序，落到具体商品/关键词/推广计划。' },
+  { module: '指标', label: '核心指标', skillModules: ['全店'], builtinFallback: '通用分析顾问',
+    framework: '逐项核对核心 KPI：支付金额、净销售额、利润、访客、支付转化率、退款率、ROI、推广费占比。达标线：支付转化率 ≥1%、退款率 ≤店铺均值、推广费占净销售额 ≤15%、ROI ≥保本线（约 1，越高越好）、支付与访客环比不降超 20%。诊断：逐项与达标线及上周期对比，写清实际值、差值、方向。动作：对最差 1~2 项给可执行动作（调出价/加词/优化详情页/控退款）。' },
+  { module: '趋势', label: '经营趋势', skillModules: ['全店'], builtinFallback: '通用分析顾问',
+    framework: '看窗口逐日支付/访客/利润走势及与上周期对比。达标线：单日支付环比波动 ±20% 内属正常，连续下跌 ≥3 天预警，大促/周末可放宽。诊断：先给整体方向（上升/持平/下降），再找拐点日期与对应事件（退款冲高、推广停投、流量腰斩）。动作：下跌段给恢复动作（补流量、查商品/计划），上涨段给放大动作（加预算、扩词）。' },
+  { module: '商品', label: '单品分析', skillModules: ['单品'], builtinFallback: '通用分析顾问',
+    framework: '看 TOP 商品支付/退款/利润/推广费/转化与占比。达标线：单品利润为正，退款金额占其支付 ≤30%，单品推广 ROI ≥保本线（约 1）。诊断：对比商品间「支付 vs 利润 vs 退款」，找出高支付低利润、高退款、推广低效的商品，写清商品名与数字。动作：具体到商品名——加预算/优化详情与评价/降退款/暂停低效推广计划。' },
+  { module: '推广', label: '推广分析', skillModules: ['推广'], builtinFallback: '通用分析顾问',
+    framework: '先判整体 ROI 是否 ≥保本线（约 1，越高越好），再看推广费占净销售额是否 ≤15%，最后逐计划看花费/ROI/点击/CTR。达标线：ROI ≥2 为有效，<2 需优化或暂停，花费高 ROI 低的计划优先处理。诊断：写清每个计划的名称、花费、ROI 与差距。动作：具体到计划名——ROI 高加预算、ROI 低暂停或降价、CTR 低改创意。' },
+  { module: '退款', label: '退款分析', skillModules: ['全店'], builtinFallback: '通用分析顾问',
+    framework: '看退款单数/金额/退款率（vs 店铺均值）与三档结构（仅退款未发货/仅退款已发货/退货退款）及 TOP 退款商品和原因。达标线：窗口退款率 ≤店铺均值；仅退款未发货占比高=拦截/发货问题，退货退款占比高=质量/描述问题。诊断：指出哪个商品、哪类退款、金额与占比。动作：核查该商品详情页与质量，优化发货时效与未发货拦截规则。' },
+  { module: '客服DSR', label: 'DSR 与客服', skillModules: ['客服', 'DSR'], builtinFallback: '通用分析顾问',
+    framework: '看客服回复率/满意率/平均响应时长/咨询转化 + DSR 描述/物流/服务三项得分与行业均值对比。达标线：回复率 ≥95%、满意率 ≥90%、首响 ≤30 秒、DSR 三项 ≥行业均值。诊断：谁低、低多少、与行业差多少，写清客服名/得分项与数字。动作：具体到客服或得分项——话术培训、物流改善、描述优化。' },
+  { module: '搜索词', label: '搜索词', skillModules: ['搜索词'], builtinFallback: '通用分析顾问',
+    framework: '看 TOP 词访客/支付/转化率/UV 价值，找「高访客低转化」与「高产出」词。达标线：词支付转化率 ≥1%，UV 价值不低于店铺均值，访客大但支付为 0 的词需否定。诊断：写清词名、访客、支付、转化数字。动作：具体到词——高产出词加价扩量、低转化词改匹配或否定、零支付词加否定词。' },
+  { module: '建议', label: '建议动作', skillModules: ['指南'], builtinFallback: '通用分析顾问',
+    framework: '综合 8 个模块数据，先列最严重 2~3 个问题（每条带数字证据），再按投入产出排序给动作。达标线：每条建议包含「对象+动作+预期」三要素，对象具体到商品/关键词/推广计划。诊断：优先覆盖退款率异常、流量骤降、推广费占比过高三类高频问题。动作：禁止口号式大词，写清先做什么、用多少预算、预期改善什么指标。' }
 ]
 
 /** “同窗口同日”去重键：用窗口结束日期（window.end） */
@@ -127,15 +138,21 @@ export function buildWindowSummary(db: AppDatabase, shopId: number, w: WindowRan
   return lines.join('\n')
 }
 
-// ---------- 提示词组装固定结构：skill 正文 + 本模块 + 摘要 + 异常清单 ----------
+// ---------- 提示词组装：内置分析框架主导 + 摘要 + 异常清单 + 绑定技能补充（≤500 字） ----------
 export function buildPrompt(skillBody: string, block: CommentBlock, summary: string, rules: RuleHit[]): { system: string; user: string } {
-  const system = '你是电商店铺经营分析助手。规则：1) 只使用给定数据，禁止编造数字/日期/商品名；2) 中文输出，50~100 字；3) 结论先行，先给判断再给依据；4) 每条评语必须引用具体数字/日期/商品名；5) 禁止空话套话与泛泛而谈。'
+  const system = '你是电商数据分析师。规则：1) 只使用给定数据，禁止编造数字/日期/商品名；2) 输出 300~1000 字，以数据为准宁长勿短，分四段：**核心结论**（1-2 句）/**数据依据**（引用具体数字）/**问题诊断**（逐条列问题，每条带证据）/**可执行建议**（具体到商品/关键词/计划）；3) 用 markdown 结构输出：小标题加粗（如 **核心结论**），分点用 - 列表，正文用换行分段；4) 禁止口号式大词（如"紧急止损""严重恶化""全面优化"），写清"是什么数据、差多少、先做什么"；5) 中文输出'
+  const skillBrief = skillBody.trim().slice(0, 500)
   const parts = [
-    `【skill 提示词正文】\n${skillBody}`,
     `【本模块】${block.module}（${block.label}）`,
-    `【窗口数据摘要】\n${summary}`
+    `【模块分析框架】
+${block.framework}`,
+    `【窗口数据摘要】
+${summary}`
   ]
-  if (rules.length) parts.push(`【异常清单（评语可引用，不必全部列举）】\n${rules.map((r) => `- ${r.rule}：${r.evidence}`).join('\n')}`)
+  if (rules.length) parts.push(`【异常清单（评语可引用，不必全部列举）】
+${rules.map((r) => `- ${r.rule}：${r.evidence}`).join('\n')}`)
+  parts.push(`【绑定技能补充（≤500 字，仅作分析角度参考，不得反客为主）】
+${skillBrief}`)
   return { system, user: parts.join('\n\n') }
 }
 

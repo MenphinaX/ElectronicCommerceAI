@@ -46,7 +46,7 @@ export function registerCommentsIpc(getDb: () => AppDatabase, rootDir: () => str
           const text = await chatComplete(cfg, [
             { role: 'system', content: req.system },
             { role: 'user', content: req.user }
-          ], { temperature: 0.4, maxTokens: 300, timeoutMs: 60000 })
+          ], { temperature: 0.5, maxTokens: 1200, timeoutMs: 60000 })
           return { text, model: cfg.model }
         }
       : undefined

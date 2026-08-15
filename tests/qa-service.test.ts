@@ -4,15 +4,15 @@ import { buildQaPrompt, parseQaCsv, parseQaJson, parseQaTxt, qaStats } from '../
 describe('聊天质检：三格式解析归一化', () => {
   it('CSV：列头归一化，senderRole=agent 记客服，其余记客户', () => {
     const csv = `customerId,customerName,sender,senderRole,timestamp,type,content
-C1,王先生,客服小美,agent,2026-08-01 10:00,text,您好请问有什么可以帮您
-C1,王先生,王先生,customer,2026-08-01 10:01,text,我想问下物流
+C1,张先生,客服小美,agent,2026-08-01 10:00,text,您好请问有什么可以帮您
+C1,张先生,张先生,customer,2026-08-01 10:01,text,我想问下物流
 `
     const rows = parseQaCsv(csv)
     expect(rows).toHaveLength(2)
     expect(rows[0].role).toBe('客服')
     expect(rows[1].role).toBe('客户')
     expect(rows[0].sessionId).toBe('C1')
-    expect(rows[0].customerName).toBe('王先生')
+    expect(rows[0].customerName).toBe('张先生')
   })
 
   it('TXT：[时间] 发送者 (角色): 内容，角色 客户/客服', () => {

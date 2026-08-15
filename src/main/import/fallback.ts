@@ -1,4 +1,4 @@
-// LLM 兜底（任务书步骤 9）：一级列映射 → 二级全量解析；输出过同一套严苛校验，失败自动重试 1 次
+﻿// LLM 兜底（任务书步骤 9）：一级列映射 → 二级全量解析；输出过同一套严苛校验，失败自动重试 1 次
 import type { AppDatabase } from '../db/database'
 import type {
   CsDailyRow, DailyMetricRow, Dsr180dRow, DsrDailyRow, ProductDailyRow,
@@ -70,7 +70,7 @@ const REQUIRED_FIELDS: Record<SourceType, string[]> = {
   product_detail: ['productId', 'payAmountFen', 'netSalesFen', 'refundAmountFen', 'promoCostFen', 'profitFen'],
   promo: ['date', 'adEntityId', 'costFen', 'roas'],
   daily: ['date', 'payAmountFen', 'netSalesFen', 'profitFen', 'visitors', 'refundAmountFen', 'promoCostFen'],
-  dsr: ['indicator', 'score', 'industryAvg', 'date', 'descriptionScore', 'logisticsScore', 'serviceScore'],
+  dsr: ['indicator', 'score', 'industryAvg', 'compareText', 'target', 'gapText'],
   cs: ['staffName', 'inquiryCount', 'inquiryFinalPayRate', 'avgResponseSeconds'],
   refund: ['orderNo', 'refundNo', 'refundAmountFen', 'goodsStatus', 'afterSaleType', 'productId']
 }
@@ -290,15 +290,25 @@ export function rowsFromRecords(spec: SourceSpec, type: SourceType, filePath: st
       return { target: 'cs_daily', rows }
     }
     case 'dsr': {
-      const daily: DsrDailyRow[] = records.map((r) => ({
-        shopId: 0, date: norm(r.date), descriptionScore: leadingNumber(r.descriptionScore as RawCell),
-        logisticsScore: leadingNumber(r.logisticsScore as RawCell), serviceScore: leadingNumber(r.serviceScore as RawCell)
-      }))
-      const d180: Dsr180dRow[] = records.map((r) => ({
-        shopId: 0, snapshotDate: norm(r.snapshotDate), indicator: String(r.indicator).trim(),
-        score: leadingNumber(r.score as RawCell), trend: cell(r.trend), industryAvg: leadingNumber(r.industryAvg as RawCell),
-        compareText: cell(r.compareText), target: leadingNumber(r.target as RawCell), gapText: cell(r.gapText)
-      }))
+      // 180 天行与日维度行按字段分流：只有 indicator 无 date → 仅入 180 天（任务 4O 只 180 天兜底）
+      const daily: DsrDailyRow[] = []
+      const d180: Dsr180dRow[] = []
+      for (const r of records) {
+        const d = normalizeDate(r.date as RawCell)
+        if (d) {
+          daily.push({
+            shopId: 0, date: d, descriptionScore: leadingNumber(r.descriptionScore as RawCell),
+            logisticsScore: leadingNumber(r.logisticsScore as RawCell), serviceScore: leadingNumber(r.serviceScore as RawCell)
+          })
+        }
+        if (r.indicator !== undefined && r.indicator !== null && String(r.indicator).trim() !== '') {
+          d180.push({
+            shopId: 0, snapshotDate: norm(r.snapshotDate), indicator: String(r.indicator).trim(),
+            score: leadingNumber(r.score as RawCell), trend: cell(r.trend), industryAvg: leadingNumber(r.industryAvg as RawCell),
+            compareText: cell(r.compareText), target: leadingNumber(r.target as RawCell), gapText: cell(r.gapText)
+          })
+        }
+      }
       return { target: 'dsr', rows: { daily, d180 } }
     }
     case 'refund': {
@@ -389,7 +399,7 @@ export async function runFallback(
       const dataRows = rec.rows.length
       const parsed: ParsedFile = {
         type, label: SOURCE_LABEL[type], spec, headerRow: 1, dataRows,
-        dateStart: dateState.start, dateEnd: dateState.end, rows, issues: [], ok: true
+        dateStart: dateState.start, dateEnd: dateState.end, rows, issues: [], warnings: [], ok: true
       }
       return { ok: true, method: 'full-parse', parsed }
     } catch (e) {

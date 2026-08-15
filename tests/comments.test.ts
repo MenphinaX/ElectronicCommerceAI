@@ -47,7 +47,7 @@ function seedSkills(db: AppDatabase): Map<number, { name: string; body: string }
 describe('任务6 评语：规则引擎（确定性异常）', () => {
   it('全窗口运行规则：每条命中的证据都含真实数字，且至少命中 1 条', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const hits = runRules(db, shopId, W30)
     writeFileSync(join(tmpdir(), 'cmt-hits.json'), JSON.stringify({ hits, kpi: db.raw.prepare('SELECT * FROM daily_metrics ORDER BY date LIMIT 3').all() }, null, 2))
@@ -62,7 +62,7 @@ describe('任务6 评语：规则引擎（确定性异常）', () => {
 describe('任务6 评语：窗口摘要与提示词组装', () => {
   it('摘要包含真实金额（30天支付 412208.36 元）与窗口日期', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const s = buildWindowSummary(db, shopId, W30)
     expect(s).toContain('2026-07-12')
@@ -70,15 +70,18 @@ describe('任务6 评语：窗口摘要与提示词组装', () => {
     expect(s).toContain('近30天')
   })
 
-  it('提示词 = skill 正文 + 模块 + 摘要 + 异常清单，且要求结论先行', () => {
+  it('提示词 = 模块 + 分析框架 + 摘要 + 异常清单 + 技能补充，system 四段式 300~1000 字（4P 去模板化，4Q 字数对齐）', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const rules = runRules(db, shopId, W30)
     const block = COMMENT_BLOCKS[0]
     const p = buildPrompt('SKILL-BODY-正文', block, 'SUMMARY', rules)
-    expect(p.system).toContain('结论先行')
+    expect(p.system).toContain('300~1000') // 4R 规格翻转：字数 300~800→300~1000（非放宽非删减）
+    expect(p.system).not.toContain('结论先行')
+    expect(p.system).not.toContain('50~100')
     expect(p.user).toContain('SKILL-BODY-正文')
+    expect(p.user).toContain('模块分析框架')
     expect(p.user).toContain(block.module)
     expect(p.user).toContain('SUMMARY')
     if (rules.length) expect(p.user).toContain('异常清单')
@@ -88,7 +91,7 @@ describe('任务6 评语：窗口摘要与提示词组装', () => {
 describe('任务6 评语：skill 绑定解析', () => {
   it('有绑定用绑定 skill，无绑定回退内置默认', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const skills = seedSkills(db)
     const readSkill = (id: number) => { const s = skills.get(id); return s ? { name: s.name, body: s.body } : null }
@@ -114,7 +117,7 @@ function listSkillsLike(db: AppDatabase, name: string): number {
 describe('任务6 评语：生成流程（stub 模型）', () => {
   function setup() {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const skills = seedSkills(db)
     const readSkill = (id: number) => { const s = skills.get(id); return s ? { name: s.name, body: s.body } : null }

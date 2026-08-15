@@ -1,4 +1,4 @@
-// 9 类数据源规格（任务 0 实测口径，来源 docs/数据源清单.md；列名按名称匹配不按位置）
+﻿// 9 类数据源规格（任务 0 实测口径，来源 docs/数据源清单.md；列名按名称匹配不按位置）
 // 表头行/列数/必填列均为实测值；本地解析从严，任一项不过 → LLM 兜底/人工
 
 export type SourceType =
@@ -12,7 +12,7 @@ export interface SourceSpec {
   expectedHeaderRow: number
   expectedCols: number
   requiredHeader: string[]
-  requiredCols: Record<string, string>
+  requiredCols: Record<string, string | string[]>
   encoding?: 'utf8' | 'gbk'
   dateSource: 'column' | 'filename'
   dateColumn?: string
@@ -139,8 +139,8 @@ export const SPECS: SourceSpec[] = [
     expectedCols: 7,
     requiredHeader: ['指标', '得分', '行业均值'],
     requiredCols: {
-      indicator: '指标', score: '得分', trend: '趋势', industryAvg: '行业均值',
-      compareText: '与行业对比', target: '目标值', gapText: '距目标值差距',
+      indicator: ['指标', '指标名称'], score: '得分', trend: ['趋势', '趋势提示'], industryAvg: '行业均值',
+      compareText: '与行业对比', target: '目标值', gapText: ['距目标值差距', '距目标值相差（笔5分评价订单）'],
       date: '日期', descriptionScore: '描述得分（较上日）', logisticsScore: '物流得分（较上日）', serviceScore: '服务得分（较上日）'
     },
     dateSource: 'filename',

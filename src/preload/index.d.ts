@@ -97,7 +97,8 @@ export interface PreloadApi {
     remove(id: number): Promise<boolean>
     setDefault(id: number | null): Promise<boolean>
     getDefault(): Promise<number | null>
-    test(id: number): Promise<{ ok: boolean; elapsedMs: number; message?: string; model?: string }>
+    test(id: number): Promise<{ ok: boolean; elapsedMs: number; message?: string; note?: string; model?: string }>
+    fetchModels(input: { baseUrl: string; apiKey: string; provider?: string }): Promise<{ ok: boolean; models?: string[]; error?: string }>
   }
   skills: {
     list(): Promise<{ skills: Array<Record<string, unknown>>; bindings: Array<Record<string, unknown>>; modules: string[] }>

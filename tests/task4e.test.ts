@@ -157,7 +157,7 @@ describe('任务 4E：ensureBuiltinSkills 版本迁移（删旧→种子→强�
   it('旧库 ai_analyses/messages 引用旧技能时迁移不炸：先置空引用再删旧行', () => {
     const db = freshDb()
     const root = tempRoot()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     const oldId = upsertSkill(db, { name: '全店', description: '旧占位', path: 'skills/全店/SKILL.md' })
     db.raw.prepare('INSERT INTO ai_analyses (shop_id, module, date, content, source_skill_id, model) VALUES (?, \'摘要\', \'2026-08-14\', \'旧评语 412208.36 元\', ?, \'deepseek-chat\')').run(shopId, oldId)
     const convInfo = db.raw.prepare('INSERT INTO conversations (title) VALUES (\'t\')').run()

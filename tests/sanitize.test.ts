@@ -4,7 +4,7 @@ import { sanitizeLine, sanitizeText } from '../src/main/system/sanitize'
 
 describe('sanitizeLine', () => {
   it('打码机器码', () => {
-    const line = 'machine=ECAI-0000000000000000000000000000000000000000000000000000000000000000-0000000000000000000000000000000000000000000000000000000000000000 ok'
+    const line = 'machine=ECAI-6973e848160ae207e11a688cd083da7325d58104cb9dee5d54f99b33159d75b6-34ec13f06ce063d095bf13fdd17aa4334f690c16590b20c73d342ceb08ea198c ok'
     const out = sanitizeLine(line)
     expect(out).toContain('ECAI-***')
     expect(out).not.toContain('6973e848')

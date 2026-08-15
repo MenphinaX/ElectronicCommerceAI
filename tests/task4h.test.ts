@@ -138,13 +138,13 @@ describe('任务4H ④ 启动向导：AI 模型步骤 + 店铺占位统一', () 
     expect(src).toContain('保存并测试')
   })
 
-  it('创建店铺占位统一为「例如：XX旗舰店」，全 src 无「XX旗舰店」', () => {
+  it('创建店铺占位统一为「例如：XX旗舰店」，全 src 无「佰泰康车品旗舰店」', () => {
     const wizard = readFileSync(join(ROOT, 'src/renderer/src/components/onboarding/OnboardingWizard.vue'), 'utf8')
     expect(wizard).toContain('例如：XX旗舰店')
     const shopMgr = readFileSync(join(ROOT, 'src/renderer/src/components/import/ShopManager.vue'), 'utf8')
     expect(shopMgr).toContain('XX旗舰店')
     const appSrc = readFileSync(join(ROOT, 'src/renderer/src/App.vue'), 'utf8')
-    expect(appSrc).not.toContain('XX旗舰店')
+    expect(appSrc).not.toContain('佰泰康车品旗舰店')
   })
 
   it('品牌图标已接入：App.vue/门禁/顶栏/开屏/引导使用 BrandIcon，brand.png 产物存在', () => {

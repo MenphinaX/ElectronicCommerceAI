@@ -1,4 +1,4 @@
-// 标准模板示例下载：9 类 CSV（UTF-8 BOM）+ 说明文档，格式对不上时供对照/人工录入
+﻿// 标准模板示例下载：9 类 CSV（UTF-8 BOM）+ 说明文档，格式对不上时供对照/人工录入
 import fs from 'node:fs'
 import { join } from 'node:path'
 import { SPECS, SOURCE_LABEL, type SourceSpec, type SourceType } from './specs'
@@ -10,8 +10,12 @@ export interface TemplateInfo {
   path: string
 }
 
+function templateCols(spec: SourceSpec): string[] {
+  return Object.values(spec.requiredCols).map((v) => (Array.isArray(v) ? v[0] : v))
+}
+
 function sampleRow(spec: SourceSpec): string[] {
-  const cols = Object.values(spec.requiredCols)
+  const cols = templateCols(spec)
   return cols.map((name, i) => {
     switch (name) {
       case '日期': case '统计日期': return '2026-08-11'
@@ -36,7 +40,7 @@ function csvEscape(v: string): string {
 }
 
 function buildCsv(spec: SourceSpec): string {
-  const cols = Object.values(spec.requiredCols)
+  const cols = templateCols(spec)
   const lines: string[] = [cols.map(csvEscape).join(',')]
   lines.push(sampleRow(spec).map(csvEscape).join(','))
   return '\uFEFF' + lines.join('\r\n') + '\r\n'
@@ -68,6 +72,57 @@ function buildReadme(): string {
   return lines.join('\r\n')
 }
 
+/** 「DSR-AI生成提示词.txt」：供外部 AI 生成标准 DSR excel（任务 4O；若 4P 已生成则跳过不覆盖） */
+function buildDsrAiPrompt(): string {
+  return [
+    'EC AI 店铺 DSR 数据标准格式（供外部 AI 生成）',
+    '================================================',
+    '',
+    '用途：让外部 AI 按本格式生成「店铺DSR数据_YYYY-MM-DD.xlsx」，可直接导入 EC AI。',
+    '要求：xlsx 文件、单个工作表，按下面三个区块自上而下排列，不加多余说明行，不合并单元格。',
+    '',
+    '【区块一：店铺 180 天 DSR】（必填，共 5 行）',
+    '第 1 行：标题「店铺180天 DSR（数据日期：YYYY-MM-DD）」',
+    '第 2 行：表头 = 指标 | 得分 | 趋势 | 行业均值 | 与行业对比 | 目标值 | 距目标值差距',
+    '第 3-5 行：三行数据，指标固定为：',
+    '  近180天宝贝与描述相符DSR',
+    '  近180天服务态度DSR',
+    '  近180天物流质量DSR',
+    '',
+    '【区块二：店铺新增 DSR（日维度）】（建议提供）',
+    '标题行「店铺新增 DSR（日维度，YYYY-MM-DD 至 YYYY-MM-DD）」',
+    '表头 = 日期 | 描述得分（较上日） | 物流得分（较上日） | 服务得分（较上日）',
+    '数据行：每天一行，日期格式 YYYY-MM-DD，得分形如 5.00 (0.00%)',
+    '',
+    '【区块三：商品新增 DSR（日维度）】（可选）',
+    '标题行「商品新增 DSR（日维度，YYYY-MM-DD）」',
+    '表头 = 商品名称 | 商品ID | 描述（得分/次数） | 服务（得分/次数） | 物流（得分/次数）',
+    '数据行：每个商品一行，得分形如 5.00 (3)',
+    '',
+    '【输出要求】',
+    '1. 文件名「店铺DSR数据_YYYY-MM-DD.xlsx」，区块一必须完整（区块二/三缺失可接受，但最好给出）。',
+    '2. 表头文案必须与上面完全一致。',
+    '3. 得分/行业均值/目标值为小数（4~5 分制）；距目标值差距为「N 笔 5 分评价订单」文案。',
+    '4. 日期统一 YYYY-MM-DD；趋势为「↑ 表现良好，继续保持 / ↓ 表现下降，需关注」等简短中文文案。',
+    '',
+    '【真实示例（2026-08-11 实测）】',
+    '店铺180天 DSR（数据日期：2026-08-11）',
+    '指标\t得分\t趋势\t行业均值\t与行业对比\t目标值\t距目标值差距',
+    '近180天宝贝与描述相符DSR\t4.78\t↑ 表现良好，继续保持\t4.79\t低于行业 0.14%\t4.79\t32 笔 5 分评价订单',
+    '近180天服务态度DSR\t4.81\t↑ 表现良好，继续保持\t4.83\t低于行业 0.41%\t4.83\t115 笔 5 分评价订单',
+    '近180天物流质量DSR\t4.85\t↑ 表现良好，继续保持\t4.85\t高于行业 1.79%\t4.92\t737 笔 5 分评价订单',
+    '',
+    '店铺新增 DSR（日维度，2026-08-11 至 2026-08-11）',
+    '日期\t描述得分（较上日）\t物流得分（较上日）\t服务得分（较上日）',
+    '2026-08-11\t5.00 (0.00%)\t5.00 (0.00%)\t5.00 (0.00%)',
+    '',
+    '商品新增 DSR（日维度，2026-08-11）',
+    '商品名称\t商品ID\t描述（得分/次数）\t服务（得分/次数）\t物流（得分/次数）',
+    '汽车座套全包真皮座椅套订做专用全包围2026座垫四季通用汽...\t1067854327120\t5.00 (3)\t5.00 (3)\t5.00 (3)',
+    '汽车座套全包真皮专车专用定制车座套纳帕皮坐垫套四季通用...\t1069702173954\t5.00 (2)\t5.00 (2)\t5.00 (2)'
+  ].join('\r\n') + '\r\n'
+}
+
 export function ensureTemplates(dir: string): TemplateInfo[] {
   fs.mkdirSync(dir, { recursive: true })
   const out: TemplateInfo[] = []
@@ -79,6 +134,8 @@ export function ensureTemplates(dir: string): TemplateInfo[] {
   }
   const readme = join(dir, '数据源模板说明.txt')
   if (!fs.existsSync(readme)) fs.writeFileSync(readme, buildReadme())
+  const dsrPrompt = join(dir, 'DSR-AI生成提示词.txt')
+  if (!fs.existsSync(dsrPrompt)) fs.writeFileSync(dsrPrompt, buildDsrAiPrompt())
   return out
 }
 
@@ -98,7 +155,9 @@ export function copyTemplatesTo(dir: string, destDir: string): { count: number; 
   for (const it of items) fs.copyFileSync(it.path, join(destDir, it.fileName))
   const readme = join(dir, '数据源模板说明.txt')
   if (fs.existsSync(readme)) fs.copyFileSync(readme, join(destDir, '数据源模板说明.txt'))
-  return { count: items.length + 1, dest: destDir }
+  const dsrPrompt = join(dir, 'DSR-AI生成提示词.txt')
+  if (fs.existsSync(dsrPrompt)) fs.copyFileSync(dsrPrompt, join(destDir, 'DSR-AI生成提示词.txt'))
+  return { count: items.length + 2, dest: destDir }
 }
 
 export { SOURCE_LABEL }

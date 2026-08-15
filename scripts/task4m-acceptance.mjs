@@ -1,4 +1,4 @@
-// 任务 4M 打包态真机验收（铁律 5）：CDP 驱动 win-unpacked 0.1.4
+﻿// 任务 4M 打包态真机验收（铁律 5）：CDP 驱动 win-unpacked 0.1.4
 // A 开屏出现→点击进入→.splash 消失且 .app-body 出现
 // B 自动进入（时长 6s）→ .splash 消失且 .app-body 出现
 // C 连续两次启动均通过（第二次启动仍显示开屏，每次启动语义）
@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync, copyFileSyn
 import { join } from 'node:path'
 import { chromium } from 'playwright-core'
 
-const EXE = 'C:/Users/Administrator/Desktop/EC-AI-主程序源码/release/win-unpacked/EC AI.exe'
+const EXE = 'D:/源码/ECAI/01-主程序源码/EC-AI-主程序源码/release/win-unpacked/EC AI.exe'
 const ROOT = process.cwd()
 const BASE = 'C:/Users/Administrator/AppData/Local/Temp/ecai-4m-accept'
 const LOG_OUT = join(ROOT, 'accept-4m.log')

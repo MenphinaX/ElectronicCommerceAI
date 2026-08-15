@@ -3,6 +3,7 @@
 import { computed, ref, watch } from 'vue'
 import AppIcon from '../AppIcon.vue'
 import { useCommentsStore } from '../../stores/comments'
+import { renderMarkdownLite } from '../../utils/md-lite'
 
 const props = defineProps<{ module: string }>()
 const store = useCommentsStore()
@@ -40,7 +41,7 @@ const state = computed(() => {
     </button>
     <div v-if="open" class="comment-body">
       <template v-if="state.kind === 'ok'">
-        <p class="comment-text">{{ item!.content }}</p>
+        <div class="comment-text" v-html="renderMarkdownLite(item!.content ?? '')"></div>
         <div class="comment-meta">
           <span v-if="item!.model">模型：{{ item!.model }}</span>
           <span v-if="item!.skillName">所用技能：{{ item!.skillName }}</span>
@@ -124,7 +125,33 @@ button[aria-expanded='true'] .chev {
   font-size: 13px;
   line-height: 1.7;
   color: var(--text-primary);
-  white-space: pre-wrap;
+}
+.comment-text :deep(p) {
+  margin: 6px 0;
+}
+.comment-text :deep(p:first-child) {
+  margin-top: 0;
+}
+.comment-text :deep(p:last-child) {
+  margin-bottom: 0;
+}
+.comment-text :deep(strong) {
+  font-weight: 700;
+}
+.comment-text :deep(h4),
+.comment-text :deep(h5) {
+  margin: 10px 0 4px;
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.comment-text :deep(ul),
+.comment-text :deep(ol) {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+.comment-text :deep(li) {
+  margin: 3px 0;
 }
 .comment-text.dim {
   color: var(--text-secondary);

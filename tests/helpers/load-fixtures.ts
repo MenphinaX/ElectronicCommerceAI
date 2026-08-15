@@ -10,28 +10,19 @@ import type {
 
 XLSX.set_fs(fs)
 
-export const TEMPLATE_DIR: string = process.env.EC_AI_TEMPLATE_DIR ?? ''
-
-// 含店名的模板文件名不确定（平台导出按店铺命名），按前缀在模板目录动态查找；无模板目录时给占位名（读取时报错提示需设置 EC_AI_TEMPLATE_DIR）
-export function findTemplateFile(prefix: string, suffix: string): string {
-  if (!TEMPLATE_DIR) return `${prefix}${suffix}`
-  for (const f of fs.readdirSync(TEMPLATE_DIR)) {
-    if (f.startsWith(prefix) && f.endsWith(suffix)) return f
-  }
-  throw new Error(`模板目录 ${TEMPLATE_DIR} 中找不到 ${prefix}*${suffix}，请确认 EC_AI_TEMPLATE_DIR 指向真实模板目录`)
-}
+export const TEMPLATE_DIR: string = process.env.EC_AI_TEMPLATE_DIR ?? 'C:/Users/Administrator/Desktop/模板'
 
 export const CONSULT_FILE = '2026-08-11.csv'
 export const KEYWORD_FILE = '【生意参谋】选词助手-引流搜索词-店外-无线-20260811.xls'
 export const PRODUCT_REPORT_FILE = '【生意参谋平台】商品_全部_2026-08-11_2026-08-11.xls'
-export const PRODUCT_DETAIL_FILE = findTemplateFile('商品总览_天猫_', '.xlsx')
+export const PRODUCT_DETAIL_FILE = '商品总览_天猫_佰泰康车品旗舰店_2026-08-11.xlsx'
 export const PROMO_FILE = '商品报表_8月11.csv'
-export const DAILY_FILE = findTemplateFile('经营数据_天猫_', '.xlsx')
+export const DAILY_FILE = '经营数据_天猫_佰泰康车品旗舰店_2026-07-13_2026-08-11.xlsx'
 export const DSR_FILE = '店铺DSR数据_2026-08-11.xlsx'
 export const CS_FILE = '自制报表-报表查看-客服绩效_20260809_20260809_全部.xlsx'
 export const REFUND_FILE = '退款单.xlsx'
 
-export const SHOP_NAME = 'XX旗舰店'
+export const SHOP_NAME = '佰泰康车品旗舰店'
 export const CS_DATE = '2026-08-09' // 客服文件名为 20260809
 export const DSR_DATE = '2026-08-11'
 

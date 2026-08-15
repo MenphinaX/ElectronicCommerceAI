@@ -1,4 +1,4 @@
-<!-- 模型配置（任务 5）：服务商预设 + CRUD + 测速 + 设默认；API key 只见「已设置/未设置」 -->
+﻿<!-- 模型配置（任务 5）：服务商预设 + CRUD + 测速 + 设默认；API key 只见「已设置/未设置」 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import AppIcon from '../AppIcon.vue'
@@ -31,6 +31,9 @@ const formKey = ref('')
 const saving = ref(false)
 const testingId = ref<number | null>(null)
 const testResult = ref<{ id: number; text: string; ok: boolean } | null>(null)
+const fetchingModels = ref(false)
+const modelOptions = ref<string[]>([])
+const modelFetchError = ref('')
 
 const rows = computed(() => store.models)
 
@@ -110,16 +113,44 @@ async function testModel(m: ModelItem): Promise<void> {
   testingId.value = m.id
   testResult.value = null
   try {
-    const r = await store.test(m.id)
+    const r = (await store.test(m.id)) as { ok: boolean; elapsedMs: number; message?: string; note?: string }
     testResult.value = {
       id: m.id,
       ok: r.ok,
-      text: r.ok ? `正常响应，耗时 ${r.elapsedMs} ms` : `失败（${r.elapsedMs} ms）：${r.message ?? '未知错误'}`
+      text: r.ok
+        ? r.note ? `已连通（${r.note}），耗时 ${r.elapsedMs} ms` : `正常响应，耗时 ${r.elapsedMs} ms`
+        : `失败（${r.elapsedMs} ms）：${r.message ?? '未知错误'}`
     }
   } catch (e) {
     testResult.value = { id: m.id, ok: false, text: (e as Error).message }
   } finally {
     testingId.value = null
+  }
+}
+
+async function fetchModelList(): Promise<void> {
+  const baseUrl = formBase.value.trim()
+  const apiKey = formKey.value.trim()
+  if (!baseUrl || !apiKey) {
+    modelFetchError.value = '请先填写 base_url 与 API key 再拉取'
+    return
+  }
+  fetchingModels.value = true
+  modelFetchError.value = ''
+  try {
+    const r = await window.api.models.fetchModels({ baseUrl, apiKey, provider: formProvider.value })
+    if (r.ok) {
+      modelOptions.value = r.models ?? []
+      if (modelOptions.value.length === 0) modelFetchError.value = '接口已连通，但未返回任何模型'
+    } else {
+      modelOptions.value = []
+      modelFetchError.value = r.error ?? '拉取失败'
+    }
+  } catch (e) {
+    modelOptions.value = []
+    modelFetchError.value = (e as Error).message
+  } finally {
+    fetchingModels.value = false
   }
 }
 </script>
@@ -172,7 +203,18 @@ async function testModel(m: ModelItem): Promise<void> {
     </label>
     <label class="field">
       <span class="field-label">模型名</span>
-      <input v-model="formName" class="input" placeholder="如 deepseek-chat / gpt-4o-mini" />
+      <div class="model-name-row">
+        <input v-model="formName" class="input" placeholder="如 deepseek-chat / gpt-4o-mini" />
+        <button v-if="formBase.trim() && formKey.trim()" class="btn sm" :disabled="fetchingModels" @click="fetchModelList">
+          {{ fetchingModels ? '拉取中…' : '拉取模型' }}
+        </button>
+      </div>
+      <div v-if="modelOptions.length > 0" class="model-options">
+        <button v-for="opt in modelOptions" :key="opt" type="button" class="model-option" @click="formName = opt; modelOptions = []">
+          {{ opt }}
+        </button>
+      </div>
+      <p v-if="modelFetchError" class="fetch-error">{{ modelFetchError }}</p>
     </label>
     <label class="field">
       <span class="field-label">base_url</span>
@@ -313,6 +355,40 @@ async function testModel(m: ModelItem): Promise<void> {
 .default-tag {
   font-size: 11px;
   color: var(--text-tertiary);
+}
+.model-name-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.model-name-row .input {
+  flex: 1;
+}
+.model-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+.model-option {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.model-option:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.fetch-error {
+  margin: 6px 0 0;
+  color: var(--danger, #e5534b);
+  font-size: 12px;
+  word-break: break-all;
 }
 .test-line {
   margin: 10px 0 0;

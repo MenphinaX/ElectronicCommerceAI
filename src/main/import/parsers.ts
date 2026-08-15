@@ -1,4 +1,4 @@
-// 9 类数据源解析：表头偏移容错、列名按名称匹配、清洗（ID 前缀/重复表头/汇总行/日期统一）
+﻿// 9 类数据源解析：表头偏移容错、列名按名称匹配、清洗（ID 前缀/重复表头/汇总行/日期统一）
 import { basename } from 'node:path'
 import type {
   CsDailyRow, DailyMetricRow, Dsr180dRow, DsrDailyRow, ProductDailyRow,
@@ -29,6 +29,8 @@ export interface ParsedFile {
   dateEnd: string | null
   rows: ParsedRows
   issues: ValidationIssue[]
+  /** 不阻断导入的提示（列数波动/区块缺失等，任务 4O） */
+  warnings?: ValidationIssue[]
   ok: boolean
 }
 
@@ -65,14 +67,26 @@ interface ColIndexes {
   issues: ValidationIssue[]
 }
 
+function colNames(spec: SourceSpec, field: string): string[] {
+  const v = spec.requiredCols[field]
+  return (Array.isArray(v) ? v : [v]).filter((n): n is string => typeof n === 'string')
+}
+
+function findCol(header: RawRow, spec: SourceSpec, field: string, mapping?: Record<string, string>): number {
+  const mapped = mapping?.[field]
+  if (mapped !== undefined) return header.findIndex((c) => cellText(c) === mapped)
+  const names = colNames(spec, field)
+  return header.findIndex((c) => names.includes(cellText(c)))
+}
+
 function resolveCols(spec: SourceSpec, rows: RawRow[], headerRow: number, mapping?: Record<string, string>): ColIndexes {
   const idx = new Map<string, number>()
   const issues: ValidationIssue[] = []
   const header = rows[headerRow - 1] ?? []
-  for (const [field, defaultName] of Object.entries(spec.requiredCols)) {
-    const sourceName = mapping?.[field] ?? defaultName
-    const i = header.findIndex((c) => cellText(c) === sourceName)
+  for (const field of Object.keys(spec.requiredCols)) {
+    const i = findCol(header, spec, field, mapping)
     if (i < 0) {
+      const sourceName = mapping?.[field] ?? colNames(spec, field)[0]
       issues.push({
         code: 'missing_col',
         message: `缺必填列「${sourceName}」（标准字段 ${field}）`,
@@ -93,19 +107,21 @@ function issuesToText(issues: ValidationIssue[]): string {
 export function parseSourceFile(filePath: string, raw: RawSheet, type: SourceType, opts: ParseOptions = {}): ParsedFile {
   const spec = specOf(type)
   const issues: ValidationIssue[] = []
+  const warnings: ValidationIssue[] = []
   const rows = raw.rows
 
   if (raw.decodeError) {
     issues.push({ code: 'encoding', message: raw.decodeError })
-    return { type, label: spec.label, spec, headerRow: 0, dataRows: 0, dateStart: null, dateEnd: null, rows: emptyRows(spec), issues, ok: false }
+    return { type, label: spec.label, spec, headerRow: 0, dataRows: 0, dateStart: null, dateEnd: null, rows: emptyRows(spec), issues, warnings: [], ok: false }
   }
 
   const located = type === 'dsr'
-    ? { info: { headerRow: 1, dataStart: 1, dataEnd: rows.length }, issues: [] as ValidationIssue[] }
+    ? { info: { headerRow: 1, dataStart: 1, dataEnd: rows.length }, issues: [] as ValidationIssue[], warnings: [] as ValidationIssue[] }
     : locateData(rows, spec, opts.headerRowOverride, opts.columnMapping)
   issues.push(...located.issues)
+  if (located.warnings) warnings.push(...located.warnings)
   if (!located.info) {
-    return { type, label: spec.label, spec, headerRow: 0, dataRows: 0, dateStart: null, dateEnd: null, rows: emptyRows(spec), issues, ok: false }
+    return { type, label: spec.label, spec, headerRow: 0, dataRows: 0, dateStart: null, dateEnd: null, rows: emptyRows(spec), issues, warnings, ok: false }
   }
   const { headerRow, dataStart, dataEnd } = located.info
 
@@ -117,13 +133,13 @@ export function parseSourceFile(filePath: string, raw: RawSheet, type: SourceTyp
   if (summaryIssue) issues.push(summaryIssue)
 
   const dateState = { start: null as string | null, end: null as string | null }
-  const parsed = parseType(spec, type, filePath, rows, headerRow, dataStart, dataEnd, cols, opts.columnMapping, issues, dateState)
+  const parsed = parseType(spec, type, filePath, rows, headerRow, dataStart, dataEnd, cols, opts.columnMapping, issues, warnings, dateState)
   const dataRows = countDataRows(rows, dataStart, dataEnd)
 
   const ok = issues.length === 0
   return {
     type, label: spec.label, spec, headerRow, dataRows: parsed.dataRows ?? dataRows,
-    dateStart: dateState.start, dateEnd: dateState.end, rows: parsed.rows, issues, ok
+    dateStart: dateState.start, dateEnd: dateState.end, rows: parsed.rows, issues, warnings, ok
   }
 }
 
@@ -157,7 +173,7 @@ function parseType(
   spec: SourceSpec, type: SourceType, filePath: string, rows: RawRow[],
   headerRow: number, dataStart: number, dataEnd: number,
   idx: ColIndexes, mapping: Record<string, string> | undefined,
-  issues: ValidationIssue[], dateState: { start: string | null; end: string | null }
+  issues: ValidationIssue[], warnings: ValidationIssue[], dateState: { start: string | null; end: string | null }
 ): ParseOutcome {
   switch (type) {
     case 'consult': return parseConsult(spec, filePath, rows, dataStart, dataEnd, idx, issues, dateState)
@@ -166,7 +182,7 @@ function parseType(
     case 'product_detail': return parseProductDetail(spec, filePath, rows, dataStart, dataEnd, idx, issues, dateState)
     case 'promo': return parsePromo(spec, filePath, rows, dataStart, dataEnd, idx, issues, dateState)
     case 'daily': return parseDaily(spec, filePath, rows, dataStart, dataEnd, idx, issues, dateState)
-    case 'dsr': return parseDsr(spec, filePath, rows, headerRow, idx, issues, dateState)
+    case 'dsr': return parseDsr(spec, filePath, rows, headerRow, idx, issues, warnings, mapping, dateState)
     case 'cs': return parseCs(spec, filePath, rows, dataStart, dataEnd, idx, issues, dateState)
     case 'refund': return parseRefund(spec, filePath, rows, dataStart, dataEnd, idx, issues, dateState)
   }
@@ -406,51 +422,55 @@ function parseRefund(
 
 function parseDsr(
   spec: SourceSpec, filePath: string, rows: RawRow[], headerRow: number,
-  idx: ColIndexes, issues: ValidationIssue[], dateState: { start: string | null; end: string | null }
+  idx: ColIndexes, issues: ValidationIssue[], warnings: ValidationIssue[],
+  mapping: Record<string, string> | undefined, dateState: { start: string | null; end: string | null }
 ): ParseOutcome {
   const daily: DsrDailyRow[] = []
   const d180: Dsr180dRow[] = []
   const snapshotDate = filenameDate(filePath, spec)
   if (snapshotDate) trackDate(dateState, snapshotDate)
 
-  // 180 天区块：表头第 2 行，数据第 3-5 行
+  // 180 天区块：表头第 2 行，数据第 3-5 行（列名按 requiredCols 别名匹配，任务 4O）
   const h180 = rows[1] ?? []
-  const has180 = ['指标', '得分', '行业均值'].every((n) => h180.some((c) => cellText(c) === n))
-  if (!has180) {
+  const cI = findCol(h180, spec, 'indicator', mapping)
+  const cS = findCol(h180, spec, 'score', mapping)
+  const cA = findCol(h180, spec, 'industryAvg', mapping)
+  if (cI < 0 || cS < 0 || cA < 0) {
     issues.push({ code: 'header_row', message: 'DSR 180 天区块表头（第 2 行：指标/得分/趋势/行业均值）未找到', row: 2 })
   } else {
-    const cI = h180.findIndex((c) => cellText(c) === '指标'), cS = h180.findIndex((c) => cellText(c) === '得分'),
-      cT = h180.findIndex((c) => cellText(c) === '趋势'), cA = h180.findIndex((c) => cellText(c) === '行业均值'),
-      cC = h180.findIndex((c) => cellText(c) === '与行业对比'), cTg = h180.findIndex((c) => cellText(c) === '目标值'),
-      cG = h180.findIndex((c) => cellText(c) === '距目标值差距')
+    const cT = findCol(h180, spec, 'trend', mapping)
+    const cC = findCol(h180, spec, 'compareText', mapping)
+    const cTg = findCol(h180, spec, 'target', mapping)
+    const cG = findCol(h180, spec, 'gapText', mapping)
     for (let i = 2; i <= 4 && i < rows.length; i++) {
       const r = rows[i] ?? []
       if (!cellText(r[cI])) continue
       d180.push({
         shopId: 0, snapshotDate: snapshotDate ?? '', indicator: cellText(r[cI]),
-        score: leadingNumber(r[cS]), trend: cellText(r[cT]) || null, industryAvg: leadingNumber(r[cA]),
-        compareText: cellText(r[cC]) || null, target: leadingNumber(r[cTg]), gapText: cellText(r[cG]) || null
+        score: leadingNumber(r[cS]), trend: cT >= 0 ? (cellText(r[cT]) || null) : null, industryAvg: leadingNumber(r[cA]),
+        compareText: cC >= 0 ? (cellText(r[cC]) || null) : null, target: cTg >= 0 ? leadingNumber(r[cTg]) : null,
+        gapText: cG >= 0 ? (cellText(r[cG]) || null) : null
       })
     }
   }
 
   // 日维度区块：第 6 行标题，第 7 行表头，第 8 行起数据（商品新增 DSR 不入库）
+  // 缺失（AI 生成文件常见）时只导入 180 天，提示不阻断（任务 4O）
   const hD = rows[6] ?? []
-  const hasDaily = ['日期', '描述得分（较上日）'].every((n) => hD.some((c) => cellText(c) === n))
-  if (!hasDaily) {
-    issues.push({ code: 'header_row', message: 'DSR 日维度区块表头（第 7 行：日期/描述得分（较上日）/物流得分（较上日）/服务得分（较上日））未找到', row: 7 })
+  const cDate = findCol(hD, spec, 'date', mapping)
+  const cD = findCol(hD, spec, 'descriptionScore', mapping)
+  const cL = findCol(hD, spec, 'logisticsScore', mapping)
+  const cS2 = findCol(hD, spec, 'serviceScore', mapping)
+  if (cDate < 0 || cD < 0 || cL < 0 || cS2 < 0) {
+    warnings.push({ code: 'structure', message: '未检测到日维度/商品维度区块，仅导入 180 天数据', row: 7 })
   } else {
-    const cDate = hD.findIndex((c) => cellText(c) === '日期'),
-      cD = hD.findIndex((c) => cellText(c) === '描述得分（较上日）'),
-      cL = hD.findIndex((c) => cellText(c) === '物流得分（较上日）'),
-      cS = hD.findIndex((c) => cellText(c) === '服务得分（较上日）')
     for (let i = 7; i < rows.length; i++) {
       const r = rows[i] ?? []
       const d = normalizeDate(r[cDate])
       if (!d) break // 日期列空说明进入下一个区块
       daily.push({
         shopId: 0, date: d, descriptionScore: leadingNumber(r[cD]),
-        logisticsScore: leadingNumber(r[cL]), serviceScore: leadingNumber(r[cS])
+        logisticsScore: leadingNumber(r[cL]), serviceScore: leadingNumber(r[cS2])
       })
       trackDate(dateState, d)
     }

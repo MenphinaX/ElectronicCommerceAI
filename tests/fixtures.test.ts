@@ -67,7 +67,7 @@ describe('真实 9 文件夹具：解析 + 落库 + 关键数字', () => {
     for (const r of fx.csDaily) upsertCsDaily(db, r)
     expect(db.raw.prepare('SELECT COUNT(*) n FROM cs_daily').get() as { n: number }).toEqual({ n: 8 })
     const staff = db.raw.prepare('SELECT staff_name n FROM cs_daily ORDER BY staff_name').all() as Array<{ n: string }>
-    expect(staff.some((s) => (s.n ?? '').trim().length > 0)).toBe(true) // 客服名来自真实模板，不绑定具体店名
+    expect(staff.some((s) => s.n.includes('佰泰康'))).toBe(true)
 
     // 搜索词：133 行、'汽车座套' 支付转化率 8.33% → 0.0833
     for (const r of fx.searchKeywords) upsertSearchKeyword(db, r)

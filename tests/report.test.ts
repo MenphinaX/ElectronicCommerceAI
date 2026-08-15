@@ -43,7 +43,7 @@ function seedComments(db: AppDatabase, shopId: number, date: string): void {
 describe('任务7 修复：日报窗口回退与覆盖天数标注', () => {
   it('日报昨日无数据自动回退最近有数据日：窗口/KPI/文件名/滞后提示同口径', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const data = buildReportData(db, { shopId, mode: 'yesterday', type: 'daily', today: '2026-08-14' })
     expect(data.window.start).toBe('2026-08-11')
@@ -70,7 +70,7 @@ describe('任务7 修复：日报窗口回退与覆盖天数标注', () => {
 
   it('周报覆盖天数如实标注：经营 4/7 天 + 数据截止 08-11（与看板口径一致）', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const data = buildReportData(db, { shopId, mode: '7', type: 'weekly', today: '2026-08-14' })
     expect(data.window.start).toBe('2026-08-08')
@@ -87,7 +87,7 @@ describe('任务7 修复：日报窗口回退与覆盖天数标注', () => {
 
   it('回退窗口评语与页面同口径：复用该日 ai_analyses 记录', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     seedComments(db, shopId, '2026-08-11')
     const data = buildReportData(db, { shopId, mode: 'yesterday', type: 'daily', today: '2026-08-14' })
@@ -99,7 +99,7 @@ describe('任务7 修复：日报窗口回退与覆盖天数标注', () => {
 
   it('昨日有经营数据时不回退：保持昨日窗口且无滞后提示', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const data = buildReportData(db, { shopId, mode: 'yesterday', type: 'daily', today: '2026-08-12' })
     expect(data.window.end).toBe('2026-08-11')
@@ -111,13 +111,13 @@ describe('任务7 修复：日报窗口回退与覆盖天数标注', () => {
 describe('任务7 日报导出：聚合数据来自真实库', () => {
   it('buildReportData 的 KPI 与数据库 SUM 一致（可回溯）', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const data = buildReportData(db, { shopId, mode: '30', type: 'daily', today: '2026-08-11' })
     const { start, end } = data.window
     const sum = db.raw.prepare('SELECT COALESCE(SUM(pay_amount_fen),0) s FROM daily_metrics WHERE shop_id=? AND date>=? AND date<=?').get(shopId, start, end) as { s: number }
     expect(data.kpi?.payAmountFen).toBe(sum.s)
-    expect(data.shopName).toBe('XX旗舰店')
+    expect(data.shopName).toBe('佰泰康车品旗舰店')
     expect(data.window.end).toBe('2026-08-11')
     expect(data.rowCounts.daily).toBeGreaterThan(0)
     expect(data.rowCounts.refund).toBeGreaterThan(0)
@@ -126,7 +126,7 @@ describe('任务7 日报导出：聚合数据来自真实库', () => {
 
   it('评语复用 ai_analyses：全店汇总 + 模块卡片都有真实内容', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const w: WindowRange = { mode: '30', label: '近30天', days: 30, start: '2026-07-13', end: '2026-08-11', prevStart: '2026-06-13', prevEnd: '2026-07-12' }
     seedComments(db, shopId, windowKey(w))
@@ -142,13 +142,13 @@ describe('任务7 日报导出：聚合数据来自真实库', () => {
 describe('任务7 日报导出：HTML 渲染与离线', () => {
   it('渲染 HTML：标题/店铺/图表容器/内联 echarts/评语都在', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     seedComments(db, shopId, '2026-08-11')
     const data = buildReportData(db, { shopId, mode: '30', today: '2026-08-11' })
     const html = renderReportHtml(data)
     expect(html).toContain('<title>经营日报</title>')
-    expect(html).toContain('XX旗舰店')
+    expect(html).toContain('佰泰康车品旗舰店')
     expect(html).toContain('chart-trend')
     expect(html).toContain('chart-product')
     expect(html).toContain('chart-promo')
@@ -163,7 +163,7 @@ describe('任务7 日报导出：HTML 渲染与离线', () => {
 
   it('无外网请求：HTML 无 script src / link href / @import / url(http', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const data = buildReportData(db, { shopId, mode: '30', today: '2026-08-11' })
     const html = renderReportHtml(data)
@@ -175,7 +175,7 @@ describe('任务7 日报导出：HTML 渲染与离线', () => {
 
   it('导出的 HTML 文件可落盘且无乱码占位', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const data = buildReportData(db, { shopId, mode: '30', today: '2026-08-11' })
     const out = join(tmpdir(), `rpt-${Date.now()}.html`)
@@ -194,7 +194,7 @@ describe('任务7 日报导出：HTML 渲染与离线', () => {
 describe('任务7 明细导出：数字与库中一致', () => {
   it('退款单明细：合计金额与库中退款完结时间窗口一致', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const rows = detailRows(db, { shopId, mode: '30', kind: 'refund', today: '2026-08-11' })
     const sumDb = db.raw.prepare('SELECT COALESCE(SUM(refund_amount_fen),0) s FROM refund_orders WHERE shop_id=? AND substr(refund_finish_time,1,10)>=? AND substr(refund_finish_time,1,10)<=?').get(shopId, '2026-07-13', '2026-08-11') as { s: number }
@@ -205,7 +205,7 @@ describe('任务7 明细导出：数字与库中一致', () => {
 
   it('商品明细：行数 = 窗口内商品数，金额可核对', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const rows = detailRows(db, { shopId, mode: '30', kind: 'product', today: '2026-08-11' })
     const n = db.raw.prepare('SELECT COUNT(*) n FROM (SELECT product_id FROM product_daily WHERE shop_id=? AND date>=? AND date<=? GROUP BY product_id)').get(shopId, '2026-07-13', '2026-08-11') as { n: number }
@@ -215,7 +215,7 @@ describe('任务7 明细导出：数字与库中一致', () => {
 
   it('每日数据：行数 = 窗口天数，支付金额合计与库一致', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const rows = detailRows(db, { shopId, mode: '30', kind: 'daily', today: '2026-08-11' })
     const sumDb = db.raw.prepare('SELECT COALESCE(SUM(pay_amount_fen),0) s FROM daily_metrics WHERE shop_id=? AND date>=? AND date<=?').get(shopId, '2026-07-13', '2026-08-11') as { s: number }
@@ -226,7 +226,7 @@ describe('任务7 明细导出：数字与库中一致', () => {
 
   it('CSV 带 UTF-8 BOM 且表头完整；xlsx 可回读且数字一致', () => {
     const db = freshDb()
-    const shopId = upsertShop(db, { name: 'XX旗舰店' })
+    const shopId = upsertShop(db, { name: '佰泰康车品旗舰店' })
     loadReal(db, shopId)
     const rows = detailRows(db, { shopId, mode: '30', kind: 'daily', today: '2026-08-11' })
     const dir = mkdtempSync(join(tmpdir(), 'ecai-rpt-out-'))
