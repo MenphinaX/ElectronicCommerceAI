@@ -51,14 +51,14 @@ function buildReadme(): string {
     '真实平台导出格式可能几个月一变：本地解析失败时按顺序走「LLM 兜底 → 人工处理中心」，',
     '人工处理中心支持：①列映射修复 ②单元格修正 ③手动录入（对照本模板）。',
     '',
-    '各类型规格（表头行/列数/必填列/参考行数，实测 2026-08-13）：',
+    '各类型规格（表头行/列数/必填列，实测 2026-08-13）：',
     ''
   ]
   for (const s of SPECS) {
     lines.push(`【${s.label}】`)
     lines.push(`  文件名关键词：${s.filePatterns.map((p) => p.source).join(' / ')}`)
     lines.push(`  表头行：第 ${s.expectedHeaderRow} 行（${s.headerDuplicated ? '第 2 行为重复表头' : ''}${s.stripTailSummary ? `末 ${s.stripTailSummary} 行为汇总/对比行需剔除` : ''}）`)
-    lines.push(`  列数：${s.expectedCols}（非空表头单元格）；参考数据行：${s.refDataRows}`)
+    lines.push(`  列数：${s.expectedCols}（非空表头单元格）`)
     lines.push(`  必填列：${s.requiredHeader.join('、')}`)
     lines.push(`  编码：${s.encoding === 'gbk' ? 'GBK（推广 csv）' : s.encoding === 'utf8' ? 'UTF-8（带 BOM）' : 'xls/xlsx（SheetJS 解析）'}`)
     lines.push('')

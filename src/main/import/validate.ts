@@ -79,7 +79,6 @@ export interface StructureInfo {
   headerRow: number
   dataStart: number
   dataEnd: number
-  expectedDataRows: number
 }
 
 /** 定位表头与数据区（含重复表头跳过、客服末 6 行汇总剔除） */
@@ -107,25 +106,12 @@ export function locateData(rows: RawRow[], spec: SourceSpec, headerRowOverride?:
   if (spec.headerDuplicated) dataStart += 1 // 第 2 行是重复表头
   let dataEnd = rows.length
   if (spec.stripTailSummary) dataEnd = Math.max(dataStart, rows.length - spec.stripTailSummary)
-  const expectedDataRows = spec.refDataRows
   return {
-    info: { headerRow, dataStart, dataEnd, expectedDataRows },
+    info: { headerRow, dataStart, dataEnd },
     issues
   }
 }
 
-/** 行数在参考值附近（明显异常即兜底：客服只读到 1 行等） */
-export function checkRowCount(info: StructureInfo, dataRows: number): ValidationIssue | null {
-  const tolerance = Math.max(3, Math.round(info.expectedDataRows * 0.1))
-  if (Math.abs(dataRows - info.expectedDataRows) > tolerance) {
-    return {
-      code: 'row_count',
-      message: `数据行数 ${dataRows} 与参考 ${info.expectedDataRows} 偏差超过 ${tolerance} 行`,
-      row: dataRows
-    }
-  }
-  return null
-}
 
 /** 客服末 6 行必须是汇总/对比行 */
 export function checkSummaryTail(spec: SourceSpec, rows: RawRow[]): ValidationIssue | null {

@@ -167,3 +167,29 @@ function renamedRefundRows(): Array<Array<string | number | null>> {
   })
   return [header, ...base.slice(1)]
 }
+
+describe('波动行数：小店铺/正常波动不再拦截（2026-08-15 删除行数硬校验）', () => {
+  it('搜索词 116 行（真实模板删 17 行波动样本）→ ok=true、dataRows=116', () => {
+    const base = readSourceFile(F(KEYWORD_FILE)).rows
+    const raw = { rows: [...base.slice(0, 6), ...base.slice(6, 6 + 116)], encoding: 'xls' }
+    const p = parseSourceFile('kw-116.xls', raw, 'keyword')
+    expect(p.ok).toBe(true)
+    expect(p.dataRows).toBe(116)
+  })
+
+  it('搜索词 1 行（新店）→ ok=true', () => {
+    const base = readSourceFile(F(KEYWORD_FILE)).rows
+    const raw = { rows: [...base.slice(0, 6), base[6]], encoding: 'xls' }
+    const p = parseSourceFile('kw-1.xls', raw, 'keyword')
+    expect(p.ok).toBe(true)
+    expect(p.dataRows).toBe(1)
+  })
+
+  it('退款 2 行（新店）→ ok=true', () => {
+    const base = readSourceFile(F(REFUND_FILE)).rows
+    const raw = { rows: [base[0], base[1], base[2]], encoding: 'xlsx' }
+    const p = parseSourceFile('rf-2.xlsx', raw, 'refund')
+    expect(p.ok).toBe(true)
+    expect(p.dataRows).toBe(2)
+  })
+})

@@ -7,7 +7,7 @@ import type {
 import { fenFromYuan, intValue, leadingNumber, normalizeDate, percentToDecimal } from '../db/units'
 import type { RawRow, RawSheet } from './reader'
 import { cellText, nonEmptyHeaderCols } from './reader'
-import { checkRowCount, checkSummaryTail, formatIssues, locateData, type ValidationIssue } from './validate'
+import { checkSummaryTail, formatIssues, locateData, type ValidationIssue } from './validate'
 import { specOf, SOURCE_LABEL, type SourceSpec, type SourceType } from './specs'
 
 export type ParsedRows =
@@ -101,7 +101,7 @@ export function parseSourceFile(filePath: string, raw: RawSheet, type: SourceTyp
   }
 
   const located = type === 'dsr'
-    ? { info: { headerRow: 1, dataStart: 1, dataEnd: rows.length, expectedDataRows: spec.refDataRows }, issues: [] as ValidationIssue[] }
+    ? { info: { headerRow: 1, dataStart: 1, dataEnd: rows.length }, issues: [] as ValidationIssue[] }
     : locateData(rows, spec, opts.headerRowOverride, opts.columnMapping)
   issues.push(...located.issues)
   if (!located.info) {
@@ -119,11 +119,6 @@ export function parseSourceFile(filePath: string, raw: RawSheet, type: SourceTyp
   const dateState = { start: null as string | null, end: null as string | null }
   const parsed = parseType(spec, type, filePath, rows, headerRow, dataStart, dataEnd, cols, opts.columnMapping, issues, dateState)
   const dataRows = countDataRows(rows, dataStart, dataEnd)
-
-  if (issues.length === 0) {
-    const rc = checkRowCount(located.info, parsed.dataRows ?? dataRows)
-    if (rc) issues.push(rc)
-  }
 
   const ok = issues.length === 0
   return {

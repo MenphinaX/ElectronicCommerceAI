@@ -1,5 +1,5 @@
 // 9 类数据源规格（任务 0 实测口径，来源 docs/数据源清单.md；列名按名称匹配不按位置）
-// 表头行/列数/必填列/参考行数均为实测值；本地解析从严，任一项不过 → LLM 兜底/人工
+// 表头行/列数/必填列均为实测值；本地解析从严，任一项不过 → LLM 兜底/人工
 
 export type SourceType =
   | 'consult' | 'keyword' | 'product_report' | 'product_detail'
@@ -13,7 +13,6 @@ export interface SourceSpec {
   expectedCols: number
   requiredHeader: string[]
   requiredCols: Record<string, string>
-  refDataRows: number
   encoding?: 'utf8' | 'gbk'
   dateSource: 'column' | 'filename'
   dateColumn?: string
@@ -46,7 +45,6 @@ export const SPECS: SourceSpec[] = [
     expectedCols: 8,
     requiredHeader: ['商品id', '商品名称', '总咨询人数', '移动端咨询人数', 'PC端咨询人数'],
     requiredCols: { productId: '商品id', productName: '商品名称', consultCount: '总咨询人数' },
-    refDataRows: 30,
     encoding: 'utf8',
     dateSource: 'filename',
     filenameDate: /(\d{4})-(\d{2})-(\d{2})/,
@@ -65,7 +63,6 @@ export const SPECS: SourceSpec[] = [
       favoriteCount: '商品收藏人数', payBuyerCount: '支付买家数', payRate: '支付转化率',
       payAmountFen: '支付金额', unitPriceFen: '客单价', uvValueFen: 'UV价值'
     },
-    refDataRows: 133,
     dateSource: 'column',
     dateColumn: '统计日期',
     targetTable: 'search_keywords'
@@ -81,7 +78,6 @@ export const SPECS: SourceSpec[] = [
       date: '统计日期', productId: '商品ID', productName: '商品名称', visitors: '商品访客数',
       pageViews: '商品浏览量', payAmountFen: '支付金额', refundAmountFen: '成功退款金额', payRate: '商品支付转化率'
     },
-    refDataRows: 110,
     dateSource: 'column',
     dateColumn: '统计日期',
     targetTable: 'product_daily'
@@ -97,7 +93,6 @@ export const SPECS: SourceSpec[] = [
       productId: '商品id', productName: '商品', payAmountFen: '支付金额(支付)', netSalesFen: '净销售额(支付)',
       refundAmountFen: '退款金额', promoCostFen: '推广花费(支付预估)', profitFen: '利润(支付预估)', salesCount: '销售件数(支付)'
     },
-    refDataRows: 111,
     dateSource: 'filename',
     filenameDate: /(\d{4})-(\d{2})-(\d{2})/,
     headerDuplicated: true,
@@ -115,7 +110,6 @@ export const SPECS: SourceSpec[] = [
       clicks: '点击量', costFen: '花费', ctr: '点击率', roas: '投入产出比',
       payAmountFen: '总成交金额', salesCount: '总成交笔数', payRate: '点击转化率'
     },
-    refDataRows: 113,
     encoding: 'gbk',
     dateSource: 'column',
     dateColumn: '日期',
@@ -132,7 +126,6 @@ export const SPECS: SourceSpec[] = [
       date: '日期', payAmountFen: '支付金额(支付)', netSalesFen: '净销售额(支付)', profitFen: '利润(支付预估)',
       visitors: '访客数', salesCount: '销售单数(支付)', refundAmountFen: '退款金额', promoCostFen: '推广花费(支付预估)', payRate: '支付转化率'
     },
-    refDataRows: 31,
     dateSource: 'column',
     dateColumn: '日期',
     headerDuplicated: true,
@@ -150,7 +143,6 @@ export const SPECS: SourceSpec[] = [
       compareText: '与行业对比', target: '目标值', gapText: '距目标值差距',
       date: '日期', descriptionScore: '描述得分（较上日）', logisticsScore: '物流得分（较上日）', serviceScore: '服务得分（较上日）'
     },
-    refDataRows: 4,
     dateSource: 'filename',
     filenameDate: /(\d{4})-(\d{2})-(\d{2})/,
     targetTable: 'dsr'
@@ -168,7 +160,6 @@ export const SPECS: SourceSpec[] = [
       avgResponseSeconds: '平均响应时长（秒)', satisfactionRate: '客户满意率', replyRate: '旺旺回复率',
       inquiryFinalPayAmountFen: '询单最终付款金额', refundAmountFen: '成功退款金额'
     },
-    refDataRows: 8,
     dateSource: 'filename',
     filenameDate: /(\d{4})(\d{2})(\d{2})/,
     stripTailSummary: 6,
@@ -188,7 +179,6 @@ export const SPECS: SourceSpec[] = [
       goodsStatus: '货物状态', afterSaleType: '售后类型', paymentTime: '订单付款时间',
       refundFinishTime: '退款完结时间', refundApplyTime: '退款申请时间', refundReason: '买家退款原因'
     },
-    refDataRows: 2096,
     dateSource: 'column',
     dateColumn: '订单付款时间',
     targetTable: 'refund_orders'
