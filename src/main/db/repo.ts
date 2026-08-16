@@ -932,7 +932,7 @@ export function addDays(dateStr: string, n: number): string {
 }
 
 /** 9 源 → 业务表映射（dateExpr 为内部常量，非用户输入） */
-const COVERAGE_SOURCES: Array<{ source: string; label: string; table: string; dateExpr: string; delayDays: number }> = [
+const COVERAGE_SOURCES: Array<{ source: string; label: string; table: string; dateExpr: string; delayDays: number; extraTable?: string; extraDateExpr?: string }> = [
   { source: 'daily', label: '经营', table: 'daily_metrics', dateExpr: 'date', delayDays: 1 },
   { source: 'product_report', label: '商品报表', table: 'product_daily', dateExpr: 'date', delayDays: 1 },
   { source: 'product_detail', label: '商品总览', table: 'product_daily', dateExpr: 'date', delayDays: 1 },
@@ -941,16 +941,22 @@ const COVERAGE_SOURCES: Array<{ source: string; label: string; table: string; da
   { source: 'refund', label: '退款', table: 'refund_orders', dateExpr: 'substr(refund_finish_time,1,10)', delayDays: 1 },
   { source: 'cs', label: '客服', table: 'cs_daily', dateExpr: 'date', delayDays: 3 },
   { source: 'keyword', label: '搜索词', table: 'search_keywords', dateExpr: 'date', delayDays: 1 },
-  { source: 'dsr', label: 'DSR', table: 'dsr_daily', dateExpr: 'date', delayDays: 1 }
+  { source: 'dsr', label: 'DSR', table: 'dsr_daily', dateExpr: 'date', delayDays: 1, extraTable: 'dsr_180d', extraDateExpr: 'snapshot_date' }
 ]
 
 export function getImportCoverage(db: AppDatabase, shopId: number, today = covToday()): ImportCoverageRow[] {
   const sid = Number(shopId) || 0
   const out: ImportCoverageRow[] = []
   for (const s of COVERAGE_SOURCES) {
-    const agg = db.raw
-      .prepare(`SELECT MAX(${s.dateExpr}) AS lastDate, MIN(${s.dateExpr}) AS minDate, COUNT(*) AS rows FROM ${s.table} WHERE shop_id=@shopId`)
-      .get({ shopId: sid }) as { lastDate: string | null; minDate: string | null; rows: number }
+    // DSR 源（任务 4W）：lastDate=MAX(dsr_daily.date, dsr_180d.snapshot_date)，rows=两表行数和；其余源行为不变
+    const aggSql = s.extraTable
+      ? `SELECT MAX(d) AS lastDate, MIN(d) AS minDate, COUNT(*) AS rows FROM (
+          SELECT ${s.dateExpr} AS d FROM ${s.table} WHERE shop_id=@shopId
+          UNION ALL
+          SELECT ${s.extraDateExpr} AS d FROM ${s.extraTable} WHERE shop_id=@shopId
+        )`
+      : `SELECT MAX(${s.dateExpr}) AS lastDate, MIN(${s.dateExpr}) AS minDate, COUNT(*) AS rows FROM ${s.table} WHERE shop_id=@shopId`
+    const agg = db.raw.prepare(aggSql).get({ shopId: sid }) as { lastDate: string | null; minDate: string | null; rows: number }
     const imp = db.raw
       .prepare('SELECT source_file AS sourceFile, imported_at AS importedAt FROM imports WHERE shop_id=@shopId AND source_type=@source ORDER BY id DESC LIMIT 1')
       .get({ shopId: sid, source: s.source }) as { sourceFile: string; importedAt: string } | undefined

@@ -427,26 +427,31 @@ function parseDsr(
 ): ParseOutcome {
   const daily: DsrDailyRow[] = []
   const d180: Dsr180dRow[] = []
-  const snapshotDate = filenameDate(filePath, spec)
+  // 快照日期：优先表内「统计日期/数据日期：YYYY-MM-DD」标题（前 6 行），其次文件名（任务 4W）
+  const snapshotDate = dsrTitleDate(rows) ?? filenameDate(filePath, spec)
   if (snapshotDate) trackDate(dateState, snapshotDate)
 
-  // 180 天区块：表头第 2 行，数据第 3-5 行（列名按 requiredCols 别名匹配，任务 4O）
-  const h180 = rows[1] ?? []
-  const cI = findCol(h180, spec, 'indicator', mapping)
-  const cS = findCol(h180, spec, 'score', mapping)
-  const cA = findCol(h180, spec, 'industryAvg', mapping)
-  if (cI < 0 || cS < 0 || cA < 0) {
-    issues.push({ code: 'header_row', message: 'DSR 180 天区块表头（第 2 行：指标/得分/趋势/行业均值）未找到', row: 2 })
+  // 180 天区块：全表扫描含「指标/指标名称」+「得分/评分」类列名的表头行，其后连续数据行按指标关键词识别（任务 4W）
+  const hIdx = rows.findIndex((r) => rowHasCell(r, ['指标']) && rowHasCell(r, ['得分', '评分']))
+  if (hIdx < 0) {
+    issues.push({ code: 'header_row', message: 'DSR 180 天区块表头（指标/得分/行业均值）未找到', row: 1 })
   } else {
-    const cT = findCol(h180, spec, 'trend', mapping)
-    const cC = findCol(h180, spec, 'compareText', mapping)
-    const cTg = findCol(h180, spec, 'target', mapping)
-    const cG = findCol(h180, spec, 'gapText', mapping)
-    for (let i = 2; i <= 4 && i < rows.length; i++) {
+    const h180 = rows[hIdx] ?? []
+    const cI = colContaining(h180, ['指标'])
+    const cS = colContaining(h180, ['得分', '评分'])
+    const cT = colContaining(h180, ['趋势'])
+    const cA = colContaining(h180, ['行业均值'])
+    const cC = colContaining(h180, ['与行业对比'])
+    const cTg = colContaining(h180, ['目标值'])
+    const cG = colContaining(h180, ['距目标值'])
+    for (let i = hIdx + 1; i < rows.length; i++) {
       const r = rows[i] ?? []
-      if (!cellText(r[cI])) continue
+      const ind = cellText(r[cI])
+      if (!ind) continue
+      // 指标含「描述/服务/物流」关键词才算 180 天数据行，其余视为下一区块（任务 4W）
+      if (!['描述', '服务', '物流'].some((kw) => ind.includes(kw))) break
       d180.push({
-        shopId: 0, snapshotDate: snapshotDate ?? '', indicator: cellText(r[cI]),
+        shopId: 0, snapshotDate: snapshotDate ?? '', indicator: ind,
         score: leadingNumber(r[cS]), trend: cT >= 0 ? (cellText(r[cT]) || null) : null, industryAvg: leadingNumber(r[cA]),
         compareText: cC >= 0 ? (cellText(r[cC]) || null) : null, target: cTg >= 0 ? leadingNumber(r[cTg]) : null,
         gapText: cG >= 0 ? (cellText(r[cG]) || null) : null
@@ -454,20 +459,22 @@ function parseDsr(
     }
   }
 
-  // 日维度区块：第 6 行标题，第 7 行表头，第 8 行起数据（商品新增 DSR 不入库）
-  // 缺失（AI 生成文件常见）时只导入 180 天，提示不阻断（任务 4O）
-  const hD = rows[6] ?? []
-  const cDate = findCol(hD, spec, 'date', mapping)
-  const cD = findCol(hD, spec, 'descriptionScore', mapping)
-  const cL = findCol(hD, spec, 'logisticsScore', mapping)
-  const cS2 = findCol(hD, spec, 'serviceScore', mapping)
-  if (cDate < 0 || cD < 0 || cL < 0 || cS2 < 0) {
-    warnings.push({ code: 'structure', message: '未检测到日维度/商品维度区块，仅导入 180 天数据', row: 7 })
+  // 日维度区块：任一行含「日期」+ 描述得分/物流得分/服务得分类列名 → 其后连续日期行入库（任务 4W）
+  // 缺失（AI 生成文件常见）时只导入 180 天，提示不阻断（4O 语义）
+  const dIdx = rows.findIndex((r, i) => i > hIdx && rowHasDateCol(r) && scoreKeywordCount(r) >= 2)
+  if (dIdx < 0) {
+    warnings.push({ code: 'structure', message: '未检测到日维度/商品维度区块，仅导入 180 天数据', row: hIdx + 2 })
   } else {
-    for (let i = 7; i < rows.length; i++) {
+    const hD = rows[dIdx] ?? []
+    const cDate = hD.findIndex((c) => { const s = cellText(c); return s === '日期' || s === '统计日期' || s === '数据日期' })
+    const cD = colContaining(hD, ['描述得分', '描述评分'])
+    const cL = colContaining(hD, ['物流得分', '物流评分'])
+    const cS2 = colContaining(hD, ['服务得分', '服务评分'])
+    for (let i = dIdx + 1; i < rows.length; i++) {
       const r = rows[i] ?? []
+      if (!r.some((c) => cellText(c) !== '')) continue
       const d = normalizeDate(r[cDate])
-      if (!d) break // 日期列空说明进入下一个区块
+      if (!d) break // 日期列非日期说明进入下一个区块
       daily.push({
         shopId: 0, date: d, descriptionScore: leadingNumber(r[cD]),
         logisticsScore: leadingNumber(r[cL]), serviceScore: leadingNumber(r[cS2])
@@ -478,6 +485,44 @@ function parseDsr(
 
   const dataRows = daily.length + d180.length
   return { rows: { target: 'dsr', rows: { daily, d180 } }, dataRows }
+}
+
+/** DSR 标题行「统计日期/数据日期：YYYY-MM-DD」优先取快照日期（前 6 行，任务 4W） */
+function dsrTitleDate(rows: RawRow[]): string | null {
+  for (let i = 0; i < Math.min(rows.length, 6); i++) {
+    for (const c of rows[i] ?? []) {
+      const m = /(?:统计日期|数据日期)[：:]\s*(\d{4})-(\d{2})-(\d{2})/.exec(cellText(c))
+      if (m) return `${m[1]}-${m[2]}-${m[3]}`
+    }
+  }
+  return null
+}
+
+/** 行内是否存在包含任一关键词的单元格（内容驱动识别，任务 4W） */
+function rowHasCell(row: RawRow, kws: string[]): boolean {
+  return colContaining(row, kws) >= 0
+}
+
+/** 行内首个包含任一关键词的列下标（无 → -1） */
+function colContaining(row: RawRow, kws: string[]): number {
+  return row.findIndex((c) => {
+    const s = cellText(c)
+    return s !== '' && kws.some((kw) => s.includes(kw))
+  })
+}
+
+/** 日维度表头日期列：单元格须为「日期/统计日期/数据日期」之一（防标题误匹配） */
+function rowHasDateCol(row: RawRow): boolean {
+  return row.some((c) => { const s = cellText(c); return s === '日期' || s === '统计日期' || s === '数据日期' })
+}
+
+/** 日维度表头命中数：描述得分/物流得分/服务得分 三类关键词各自命中 1 行计 1 */
+function scoreKeywordCount(row: RawRow): number {
+  let n = 0
+  if (rowHasCell(row, ['描述得分', '描述评分'])) n++
+  if (rowHasCell(row, ['物流得分', '物流评分'])) n++
+  if (rowHasCell(row, ['服务得分', '服务评分'])) n++
+  return n
 }
 
 export { SOURCE_LABEL, formatIssues as issuesText }

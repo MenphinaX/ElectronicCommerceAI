@@ -139,9 +139,12 @@ export const SPECS: SourceSpec[] = [
     expectedCols: 7,
     requiredHeader: ['指标', '得分', '行业均值'],
     requiredCols: {
-      indicator: ['指标', '指标名称'], score: '得分', trend: ['趋势', '趋势提示'], industryAvg: '行业均值',
+      indicator: ['指标', '指标名称'], score: ['得分', '评分'], trend: ['趋势', '趋势提示'], industryAvg: '行业均值',
       compareText: '与行业对比', target: '目标值', gapText: ['距目标值差距', '距目标值相差（笔5分评价订单）'],
-      date: '日期', descriptionScore: '描述得分（较上日）', logisticsScore: '物流得分（较上日）', serviceScore: '服务得分（较上日）'
+      date: '日期',
+      descriptionScore: ['描述得分（较上日）', '描述得分', '描述评分（较上日）', '描述评分'],
+      logisticsScore: ['物流得分（较上日）', '物流得分', '物流评分（较上日）', '物流评分'],
+      serviceScore: ['服务得分（较上日）', '服务得分', '服务评分（较上日）', '服务评分']
     },
     dateSource: 'filename',
     filenameDate: /(\d{4})-(\d{2})-(\d{2})/,

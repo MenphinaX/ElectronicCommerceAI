@@ -27,7 +27,7 @@
           <thead><tr><th>商品</th><th>咨询数</th></tr></thead>
           <tbody>
             <tr v-for="s in bp.consult.value.rows" :key="s.pid">
-              <td style="max-width:480px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><BpImage :product-id="s.pid" :size="40" /> {{ s.name }}</td>
+              <td style="max-width:480px;"><span class="zx-prod" style="display:flex;align-items:center;gap:8px;"><BpImage :product-id="s.pid" :size="40" /><span class="zx-prod-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ s.name }}</span></span></td>
               <td class="num">{{ bpNum(s.consult) }}</td>
             </tr>
           </tbody>

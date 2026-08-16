@@ -57,9 +57,9 @@ const FIELD_DESC: Record<string, string> = {
   staffName: '旺旺昵称', inquiryFinalPayCount: '询单最终付款人数', inquiryCount: '询单人数',
   inquiryFinalPayRate: '询单最终付款转化率', firstResponseSeconds: '首次响应时长（秒）',
   avgResponseSeconds: '平均响应时长（秒）', satisfactionRate: '客户满意率', replyRate: '旺旺回复率',
-  inquiryFinalPayAmountFen: '询单最终付款金额（元）', indicator: 'DSR 指标', score: '得分',
+  inquiryFinalPayAmountFen: '询单最终付款金额（元）', indicator: 'DSR 指标（描述相符/服务态度/物流质量）', score: '得分',
   trend: '趋势', industryAvg: '行业均值', compareText: '与行业对比', target: '目标值', gapText: '距目标值差距',
-  descriptionScore: '描述得分', logisticsScore: '物流得分', serviceScore: '服务得分', snapshotDate: '快照日期 YYYY-MM-DD'
+  descriptionScore: '描述得分（可选）', logisticsScore: '物流得分（可选）', serviceScore: '服务得分（可选）', snapshotDate: '快照日期 YYYY-MM-DD'
 }
 
 /** 每文件必填标准字段（对应速查表必填关键列） */
