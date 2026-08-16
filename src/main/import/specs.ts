@@ -75,7 +75,7 @@ export const SPECS: SourceSpec[] = [
     expectedCols: 38,
     requiredHeader: ['统计日期', '商品ID', '商品名称', '支付金额', '成功退款金额'],
     requiredCols: {
-      date: '统计日期', productId: '商品ID', productName: '商品名称', visitors: '商品访客数',
+      date: '统计日期', productId: '商品ID', productName: '商品名称', visitors: '商品访客数', searchGuideVisitors: '搜索引导访客数',
       pageViews: '商品浏览量', payAmountFen: '支付金额', refundAmountFen: '成功退款金额', payRate: '商品支付转化率'
     },
     dateSource: 'column',

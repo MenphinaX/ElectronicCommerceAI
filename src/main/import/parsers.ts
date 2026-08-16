@@ -1,4 +1,4 @@
-﻿// 9 类数据源解析：表头偏移容错、列名按名称匹配、清洗（ID 前缀/重复表头/汇总行/日期统一）
+// 9 类数据源解析：表头偏移容错、列名按名称匹配、清洗（ID 前缀/重复表头/汇总行/日期统一）
 import { basename } from 'node:path'
 import type {
   CsDailyRow, DailyMetricRow, Dsr180dRow, DsrDailyRow, ProductDailyRow,
@@ -252,7 +252,7 @@ function parseProductReport(
 ): ParseOutcome {
   const out: ProductDailyRow[] = []
   const cDate = col(idx, 'date'), cId = col(idx, 'productId'), cName = col(idx, 'productName'),
-    cVis = col(idx, 'visitors'), cViews = col(idx, 'pageViews'), cPay = col(idx, 'payAmountFen'),
+    cVis = col(idx, 'visitors'), cViews = col(idx, 'pageViews'), cGuide = col(idx, 'searchGuideVisitors'), cPay = col(idx, 'payAmountFen'),
     cRefund = col(idx, 'refundAmountFen'), cRate = col(idx, 'payRate')
   let n = 0
   for (let i = dataStart - 1; i < dataEnd && i < rows.length; i++) {
@@ -266,7 +266,7 @@ function parseProductReport(
     trackDate(dateState, date)
     out.push({
       shopId: 0, productId: pid, date, productName: cellText(r[cName]) || null,
-      visitors: intValue(r[cVis]), pageViews: intValue(r[cViews]), payAmountFen: fenFromYuan(r[cPay]),
+      visitors: intValue(r[cVis]), pageViews: intValue(r[cViews]), searchGuideVisitors: cGuide < 0 ? null : intValue(r[cGuide]), payAmountFen: fenFromYuan(r[cPay]),
       refundAmountFen: fenFromYuan(r[cRefund]), payRate: percentToDecimal(r[cRate])
     })
   }

@@ -36,7 +36,7 @@
                       <div class="pd-st"><span>搜索人数 <i class="ghost">{{ winLbl }}</i></span><b>{{ bpNum(p.search) }}</b></div>
                       <div class="pd-st"><span>咨询人数 <i class="ghost">{{ winLbl }}</i></span><b>{{ bpNum(p.consult) }}</b></div>
                     </div>
-                    <div class="pd-note">窗口 {{ winLbl }}（{{ bp.winStart.value.slice(5) }}~{{ bp.winEnd.value.slice(5) }}）：退款金额=商品报表成功退款金额窗口相加；推广费=商品报表同主体花费窗口相加；销售额/利润/搜索/咨询优先商品日报按日真实，缺日回落当日快照。</div>
+                    <div class="pd-note">窗口 {{ winLbl }}（{{ bp.winStart.value.slice(5) }}~{{ bp.winEnd.value.slice(5) }}）：退款金额=商品报表成功退款金额窗口相加；推广费=商品报表同主体花费窗口相加；销售额/利润/咨询优先商品日报按日真实，缺日回落当日快照；搜索=搜索引导访客数（商品_全部导入，无值显示 --）。</div>
                     <div class="pd-note">主图已绑定商品 ID {{ p.pid }}：正式版上传后全看板复用，无需重复添加。点击占位可上传本地主图。</div>
                   </div>
                 </div>
@@ -63,7 +63,7 @@
                     </tr>
                   </tbody>
                 </table>
-                <div class="pd-note">销售额/利润/搜索/咨询优先商品日报按日真实；退款金额=商品报表成功退款金额按日真实（无行回落快照/—）；推广费=商品报表同主体花费按日相加（无推广行回落快照/—）。</div>
+                <div class="pd-note">销售额/利润/咨询优先商品日报按日真实；搜索=搜索引导访客数（商品_全部导入，无值显示 --）；退款金额=商品报表成功退款金额按日真实（无行回落快照/—）；推广费=商品报表同主体花费按日相加（无推广行回落快照/—）。</div>
                 <div class="pd-head"><span v-html="BP_ICONS.pin"></span> 单品退款拆解 <span class="ghost" style="font-size:11px;font-weight:500;">[窗口 {{ bp.winStart.value.slice(5) }} ~ {{ bp.winEnd.value.slice(5) }} · {{ rbOf(p.pid).totalN }} 笔]</span></div>
                 <div class="refund-bars">
                   <div class="rb-row"><span class="rb-label">未发货</span><div class="rb-track"><div class="rb-fill wf" :style="{ width: barW(rbOf(p.pid).wf, rbOf(p.pid).max) }"></div></div><span class="rb-val">{{ rbOf(p.pid).wfN }}笔/{{ bpMoney(rbOf(p.pid).wf) }}</span></div>

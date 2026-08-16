@@ -91,6 +91,7 @@ export interface BpProductDailyRowInput {
   promoCostFen?: number | null
   profitFen?: number | null
   visitors?: number | null
+  searchGuideVisitors?: number | null
   consultCount?: number | null
 }
 export interface BpDailySnapshot {
@@ -124,7 +125,7 @@ export function buildProductDailyRows(
         sales: (Number(row.payAmountFen) || 0) / 100,
         promo: promoByDay[d] != null ? promoByDay[d] : (isSnap ? snapshot.promo : null),
         profit: (Number(row.profitFen) || 0) / 100,
-        search: row.visitors == null ? null : Number(row.visitors),
+        search: row.searchGuideVisitors == null ? null : Number(row.searchGuideVisitors),
         consult: Number(row.consultCount) || 0,
         refund: (Number(row.refundAmountFen) || 0) / 100
       }
@@ -243,7 +244,7 @@ export function useBpData() {
         pid, name: r.productName == null ? null : String(r.productName),
         sales: (Number(r.payAmountFen) || 0) / 100, refund: (Number(r.refundAmountFen) || 0) / 100,
         promo: (Number(r.promoCostFen) || 0) / 100, profit: (Number(r.profitFen) || 0) / 100,
-        search: r.visitors == null ? null : Number(r.visitors), consult: Number(r.consultCount) || 0,
+        search: r.searchGuideVisitors == null ? null : Number(r.searchGuideVisitors), consult: Number(r.consultCount) || 0,
         orders: Number(r.salesCount) || 0, days: Number(r.days) || 0, refundDays, status: null
       }
     })

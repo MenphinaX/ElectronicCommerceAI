@@ -1,4 +1,4 @@
-﻿// LLM 兜底（任务书步骤 9）：一级列映射 → 二级全量解析；输出过同一套严苛校验，失败自动重试 1 次
+// LLM 兜底（任务书步骤 9）：一级列映射 → 二级全量解析；输出过同一套严苛校验，失败自动重试 1 次
 import type { AppDatabase } from '../db/database'
 import type {
   CsDailyRow, DailyMetricRow, Dsr180dRow, DsrDailyRow, ProductDailyRow,
@@ -44,7 +44,7 @@ export interface FallbackResult {
 }
 
 const FIELD_DESC: Record<string, string> = {
-  date: '统计日期 YYYY-MM-DD', keyword: '搜索词', visitors: '访客数', pageViews: '浏览量',
+  date: '统计日期 YYYY-MM-DD', keyword: '搜索词', visitors: '访客数', searchGuideVisitors: '搜索引导访客数', pageViews: '浏览量',
   cartAddCount: '加购人数', favoriteCount: '收藏人数', payBuyerCount: '支付买家数',
   payRate: '支付转化率（0~1 或百分比）', payAmountFen: '支付金额（元）', unitPriceFen: '客单价（元）',
   uvValueFen: 'UV价值（元）', productId: '商品id（纯数字）', productName: '商品名称', salesCount: '销售件数',
@@ -245,6 +245,7 @@ export function rowsFromRecords(spec: SourceSpec, type: SourceType, filePath: st
       const rows: ProductDailyRow[] = records.map((r) => ({
         shopId: 0, productId: String(r.productId).trim(), date: norm(r.date), productName: cell(r.productName),
         visitors: intValue(r.visitors as RawCell), pageViews: intValue(r.pageViews as RawCell),
+        searchGuideVisitors: r.searchGuideVisitors == null ? null : intValue(r.searchGuideVisitors as RawCell),
         payAmountFen: fenFromYuan(r.payAmountFen as RawCell), refundAmountFen: fenFromYuan(r.refundAmountFen as RawCell),
         payRate: percentToDecimal(r.payRate as RawCell)
       }))

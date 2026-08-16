@@ -34,7 +34,7 @@ interface BpProductDailyRowInput {
   refundAmountFen?: number | null
   promoCostFen?: number | null
   profitFen?: number | null
-  visitors?: number | null
+  searchGuideVisitors?: number | null
   consultCount?: number | null
 }
 type BuildProductDailyRowsFn = (
@@ -67,8 +67,8 @@ describe('4S buildProductDailyRows：按日真实优先，缺日回落快照', (
 
   it('该日有行 → 真实值（分→元换算，含 0 显示 0 非 null）', () => {
     const rows: BpProductDailyRowInput[] = [
-      { date: '2026-08-12', payAmountFen: 12345, promoCostFen: 0, profitFen: -500, visitors: 30, consultCount: 4 },
-      { date: '2026-08-13', payAmountFen: 0, promoCostFen: 0, profitFen: 0, visitors: 0, consultCount: 0 }
+      { date: '2026-08-12', payAmountFen: 12345, promoCostFen: 0, profitFen: -500, searchGuideVisitors: 30, consultCount: 4 },
+      { date: '2026-08-13', payAmountFen: 0, promoCostFen: 0, profitFen: 0, searchGuideVisitors: 0, consultCount: 0 }
     ]
     const out = buildProductDailyRows(days, rows, snap, {})
     // 4U 规格翻转：推广费改取 promo_daily 聚合，无推广行 → null（显示 —）
@@ -111,8 +111,8 @@ describe('4S buildProductDailyRows：按日真实优先，缺日回落快照', (
     expect(out[3].refund).toBe(42) // 快照日回落 snapshot.refund
   })
 
-  it('visitors 为 null → search 为 null（其余真实）', () => {
-    const out = buildProductDailyRows(days, [{ date: '2026-08-12', payAmountFen: 100, visitors: null, consultCount: 2 }], snap, {})
+  it('searchGuideVisitors 为 null → search 为 null（其余真实）', () => {
+    const out = buildProductDailyRows(days, [{ date: '2026-08-12', payAmountFen: 100, searchGuideVisitors: null, consultCount: 2 }], snap, {})
     expect(out[1].search).toBeNull()
     expect(out[1].sales).toBe(1)
     expect(out[1].consult).toBe(2)

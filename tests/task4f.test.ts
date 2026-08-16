@@ -142,6 +142,7 @@ describe('任务4F schema v8：qa_runs 新增 agent_count 列', () => {
     const db = new AppDatabase(join(dir, 'v7.db'))
     // 手动构造 v7 结构（qa_runs 无 agent_count），插 1 行旧数据
     db.raw.exec(`
+      CREATE TABLE product_daily (shop_id INTEGER NOT NULL, product_id TEXT NOT NULL, date TEXT NOT NULL, PRIMARY KEY (shop_id, product_id, date));
       CREATE TABLE qa_runs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         shop_id INTEGER,

@@ -1,7 +1,7 @@
 // 数据库 schema（任务 2 唯一接缝，定死后各模块只认表结构）
 // 约定：金额=分(INTEGER)、数量=INTEGER、比率=0~1(REAL)、日期=YYYY-MM-DD、时间戳=YYYY-MM-DD HH:MM:SS
 
-export const SCHEMA_VERSION = 9
+export const SCHEMA_VERSION = 10
 
 export interface Migration {
   version: number
@@ -323,7 +323,12 @@ const DDL_V9: string[] = [
   )`
 ]
 
-export const MIGRATIONS: Migration[] = [{ version: 1, statements: DDL_V1 }, { version: 2, statements: DDL_V2 }, { version: 3, statements: DDL_V3 }, { version: 4, statements: DDL_V4 }, { version: 5, statements: DDL_V5 }, { version: 6, statements: DDL_V6 }, { version: 7, statements: DDL_V7 }, { version: 8, statements: DDL_V8 }, { version: 9, statements: DDL_V9 }]
+const DDL_V10: string[] = [
+  // 任务4V：product_daily 新增「搜索引导访客数」（商品_全部第 35 列；按 DDL_V7 先例只走 ALTER，不在 V1 建表加列防新库 duplicate column）
+  `ALTER TABLE product_daily ADD COLUMN search_guide_visitors INTEGER`
+]
+
+export const MIGRATIONS: Migration[] = [{ version: 1, statements: DDL_V1 }, { version: 2, statements: DDL_V2 }, { version: 3, statements: DDL_V3 }, { version: 4, statements: DDL_V4 }, { version: 5, statements: DDL_V5 }, { version: 6, statements: DDL_V6 }, { version: 7, statements: DDL_V7 }, { version: 8, statements: DDL_V8 }, { version: 9, statements: DDL_V9 }, { version: 10, statements: DDL_V10 }]
 
 /** 任务书要求的 16 张表（14 业务 + skills/module_skills） */
 export const REQUIRED_TABLES = [

@@ -6,6 +6,7 @@
     <div class="promo-list" id="promo-list">
       <div v-for="x in bp.promoTop.value" :key="x.pid" class="promo-item2" :class="{ open: openPromo.has(x.pid) }" :data-pid="x.pid">
         <button class="promo-head2" @click="toggle(x.pid)">
+          <BpImage :product-id="x.pid" :size="64" />
           <span class="promo-name2">{{ x.name }} <span class="ghost">[{{ x.pid }}]</span></span>
           <span class="promo-stats2 mono">花费 {{ bpMoney(x.spend) }} | 成交 {{ bpMoney(x.pay) }} | 净ROI {{ x.roi != null ? x.roi.toFixed(1) : '--' }}</span>
           <span class="fold-arrow" v-html="openPromo.has(x.pid) ? BP_ICONS.chevronDown : BP_ICONS.chevronRight"></span>
@@ -43,6 +44,7 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
 import { useBpData, promoComment, bpMoney, bpNum, bpPct } from './bp-utils'
+import BpImage from './BpImage.vue'
 import { BP_ICONS } from './BpIcons'
 
 const bp = useBpData()

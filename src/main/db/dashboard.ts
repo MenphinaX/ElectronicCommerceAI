@@ -169,6 +169,7 @@ export interface ProductRow {
   netSalesFen: number
   salesCount: number
   visitors: number
+  searchGuideVisitors: number | null
   consultCount: number
   promoCostFen: number
   days: number
@@ -179,7 +180,7 @@ export function productTop(db: AppDatabase, shopId: number, from: string, to: st
     .prepare(`SELECT product_id AS productId, MAX(product_name) AS productName,
       COALESCE(SUM(pay_amount_fen),0) AS payAmountFen, COALESCE(SUM(refund_amount_fen),0) AS refundAmountFen,
       COALESCE(SUM(profit_fen),0) AS profitFen, COALESCE(SUM(net_sales_fen),0) AS netSalesFen,
-      COALESCE(SUM(sales_count),0) AS salesCount, COALESCE(SUM(visitors),0) AS visitors,
+      COALESCE(SUM(sales_count),0) AS salesCount, COALESCE(SUM(visitors),0) AS visitors, COALESCE(SUM(search_guide_visitors),0) AS searchGuideVisitors,
       COALESCE(SUM(consult_count),0) AS consultCount, COALESCE(SUM(promo_cost_fen),0) AS promoCostFen,
       COUNT(*) AS days
       FROM product_daily WHERE shop_id=@shopId AND date>=@from AND date<=@to
@@ -190,7 +191,7 @@ export function productTop(db: AppDatabase, shopId: number, from: string, to: st
 export function productDailySeries(db: AppDatabase, shopId: number, productId: string, from: string, to: string): Array<Record<string, unknown>> {
   return db.raw
     .prepare(`SELECT date, pay_amount_fen AS payAmountFen, refund_amount_fen AS refundAmountFen, profit_fen AS profitFen,
-      promo_cost_fen AS promoCostFen, sales_count AS salesCount, visitors, consult_count AS consultCount
+      promo_cost_fen AS promoCostFen, sales_count AS salesCount, visitors, search_guide_visitors AS searchGuideVisitors, consult_count AS consultCount
       FROM product_daily WHERE shop_id=@shopId AND product_id=@productId AND date>=@from AND date<=@to ORDER BY date`)
     .all({ shopId, productId, from, to }) as Array<Record<string, unknown>>
 }
@@ -367,8 +368,8 @@ export function consultTop(db: AppDatabase, shopId: number, date: string, limit 
   const agg = db.raw.prepare(`SELECT COUNT(*) AS n, COALESCE(SUM(consult_count),0) AS s FROM product_daily WHERE shop_id=? AND date=? AND consult_count>0`).get(shopId, date) as { n: number; s: number }
   const rows = db.raw
     .prepare(`SELECT product_id AS productId, MAX(product_name) AS productName, COALESCE(SUM(consult_count),0) AS consultCount
-      FROM product_daily WHERE shop_id=? AND date=? AND consult_count>0 GROUP BY product_id ORDER BY consultCount DESC LIMIT ?`)
-    .all(shopId, date, limit) as Array<{ productId: string; productName: string | null; consultCount: number }>
+      FROM product_daily WHERE shop_id=? AND date=? AND consult_count>0 GROUP BY product_id ORDER BY consultCount DESC`)
+    .all(shopId, date) as Array<{ productId: string; productName: string | null; consultCount: number }>
   return { total: agg.n, sum: agg.s, rows }
 }
 
@@ -433,8 +434,8 @@ export function keywordBlock(db: AppDatabase, shopId: number, from: string, to: 
       COALESCE(SUM(pay_amount_fen),0) AS payAmountFen, COALESCE(SUM(uv_value_fen),0) AS uvValueFen,
       MAX(pay_rate) AS payRate
       FROM search_keywords WHERE shop_id=@shopId AND date>=@from AND date<=@to
-      GROUP BY keyword ORDER BY visitors DESC LIMIT @limit`)
-    .all({ shopId, from, to, limit }) as Array<Record<string, unknown>>
+      GROUP BY keyword ORDER BY visitors DESC`)
+    .all({ shopId, from, to }) as Array<Record<string, unknown>>
   const dates = (db.raw.prepare(`SELECT DISTINCT date FROM search_keywords WHERE shop_id=? AND date>=? AND date<=? ORDER BY date`).all(shopId, from, to) as Array<{ date: string }>).map((r) => r.date)
   return { totals, top, dates }
 }

@@ -21,6 +21,7 @@ export interface ProductDailyRow {
   date: string
   productName?: string | null
   visitors?: number
+  searchGuideVisitors?: number | null
   pageViews?: number
   payAmountFen?: number
   refundAmountFen?: number
@@ -390,15 +391,16 @@ export function upsertProductDaily(db: AppDatabase, row: ProductDailyRow): void 
   // 多源合一语义：未提供的字段按「已有值不变/新行取默认 0」合并（COALESCE 按参数是否为 NULL 判断）
   db.raw
     .prepare(
-      `INSERT INTO product_daily (shop_id, product_id, date, product_name, visitors, page_views, pay_amount_fen,
+      `INSERT INTO product_daily (shop_id, product_id, date, product_name, visitors, search_guide_visitors, page_views, pay_amount_fen,
          refund_amount_fen, promo_cost_fen, profit_fen, net_sales_fen, sales_count, consult_count, pay_rate)
-       VALUES (@shopId, @productId, @date, COALESCE(@productName, NULL), COALESCE(@visitors, 0),
+       VALUES (@shopId, @productId, @date, COALESCE(@productName, NULL), COALESCE(@visitors, 0), COALESCE(@searchGuideVisitors, NULL),
          COALESCE(@pageViews, 0), COALESCE(@payAmountFen, 0), COALESCE(@refundAmountFen, 0),
          COALESCE(@promoCostFen, 0), COALESCE(@profitFen, 0), COALESCE(@netSalesFen, 0),
          COALESCE(@salesCount, 0), COALESCE(@consultCount, 0), COALESCE(@payRate, NULL))
        ON CONFLICT(shop_id, product_id, date) DO UPDATE SET
          product_name = COALESCE(@productName, product_daily.product_name),
          visitors = COALESCE(@visitors, product_daily.visitors),
+         search_guide_visitors = COALESCE(@searchGuideVisitors, product_daily.search_guide_visitors),
          page_views = COALESCE(@pageViews, product_daily.page_views),
          pay_amount_fen = COALESCE(@payAmountFen, product_daily.pay_amount_fen),
          refund_amount_fen = COALESCE(@refundAmountFen, product_daily.refund_amount_fen),
@@ -410,7 +412,7 @@ export function upsertProductDaily(db: AppDatabase, row: ProductDailyRow): void 
          pay_rate = COALESCE(@payRate, product_daily.pay_rate)`
     )
     .run(withDefaults(row, {
-      productName: null, visitors: null, pageViews: null, payAmountFen: null, refundAmountFen: null,
+      productName: null, visitors: null, searchGuideVisitors: null, pageViews: null, payAmountFen: null, refundAmountFen: null,
       promoCostFen: null, profitFen: null, netSalesFen: null, salesCount: null, consultCount: null, payRate: null
     }))
 }

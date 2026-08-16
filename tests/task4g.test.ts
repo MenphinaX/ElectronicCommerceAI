@@ -128,11 +128,11 @@ describe('任务4G ③ 历史导出 CSV：表头/映射/转义', () => {
 
 describe('任务4G ④ calculator_runs 表：幂等建表 + 迁移 v9 + 增删查', () => {
   it('SCHEMA_VERSION=9 且 ALL_TABLES 含 calculator_runs；新库重复 init 不报错', () => {
-    expect(SCHEMA_VERSION).toBe(9)
+    expect(SCHEMA_VERSION).toBe(10)
     expect(ALL_TABLES).toContain('calculator_runs')
     const db = freshDb()
     db.init()
-    expect(db.userVersion()).toBe(9)
+    expect(db.userVersion()).toBe(10)
     const cols = db.raw.prepare('PRAGMA table_info(calculator_runs)').all() as Array<{ name: string; type: string }>
     expect(cols.map((c) => c.name).sort()).toEqual(['created_at', 'id', 'name', 'params_json', 'passed', 'result_json'])
     db.close()

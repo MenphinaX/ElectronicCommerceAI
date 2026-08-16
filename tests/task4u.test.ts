@@ -36,7 +36,7 @@ interface BpProductDailyRowInput {
   refundAmountFen?: number | null
   promoCostFen?: number | null
   profitFen?: number | null
-  visitors?: number | null
+  searchGuideVisitors?: number | null
   consultCount?: number | null
 }
 type BuildProductDailyRowsFn = (
@@ -117,7 +117,7 @@ describe('4U buildProductDailyRows：refund 按行（成功退款金额）、pro
   })
 
   it('无行非快照日 → sales/profit/search/consult 全 null（与原行为一致）', () => {
-    const rows: BpProductDailyRowInput[] = [{ date: '2026-08-11', payAmountFen: 100, refundAmountFen: 50, profitFen: 30, visitors: 20, consultCount: 5 }]
+    const rows: BpProductDailyRowInput[] = [{ date: '2026-08-11', payAmountFen: 100, refundAmountFen: 50, profitFen: 30, searchGuideVisitors: 20, consultCount: 5 }]
     const out = buildProductDailyRows(days, rows, snap, {})
     expect(out[0]).toEqual({ d: '2026-08-09', sales: null, promo: null, profit: null, search: null, consult: null, refund: null })
     expect(out[2].sales).toBe(1)

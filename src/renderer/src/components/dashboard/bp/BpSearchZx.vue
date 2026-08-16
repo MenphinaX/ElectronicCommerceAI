@@ -1,8 +1,8 @@
 <template>
   <div class="grid2" style="grid-template-columns:1fr;gap:12px;">
     <div class="kf-card" id="search-card">
-      <div class="kf-head"><span><span v-html="BP_ICONS.search"></span> 搜索词 TOP10</span><span class="ghost" style="font-size:11.5px;font-weight:500;">单日快照 {{ bp.lastDay.value }} · 店外无线</span></div>
-      <div class="kf-summary">
+      <div class="kf-head"><span><span v-html="BP_ICONS.search"></span> 搜索词</span><span class="ghost" style="font-size:11.5px;font-weight:500;">单日快照 {{ bp.lastDay.value }} · 店外无线</span></div>
+      <div class="kf-summary" style="max-height:420px;overflow-y:auto;">
         <p class="ghost">搜索词访客/买家 <span class="mono">{{ bpNum(kwSum.vis) }} / {{ bpNum(kwSum.buy) }}</span></p>
         <table class="simple-table" style="margin-top:8px;">
           <thead><tr><th>关键词</th><th>访客</th><th>成交买家</th><th>成交额</th></tr></thead>
@@ -21,13 +21,13 @@
     </div>
     <div class="kf-card" id="zx-card">
       <div class="kf-head"><span><span v-html="BP_ICONS.message"></span> 商品咨询量</span><span class="ghost" style="font-size:11.5px;font-weight:500;">单日快照 {{ bp.lastDay.value }}</span></div>
-      <div class="kf-summary">
+      <div class="kf-summary" style="max-height:420px;overflow-y:auto;">
         <p class="ghost">咨询商品 {{ bp.consult.value.total }} 个 · 合计咨询 {{ bpNum(bp.consult.value.sum) }} 人</p>
         <table class="simple-table" style="margin-top:8px;">
           <thead><tr><th>商品</th><th>咨询数</th></tr></thead>
           <tbody>
             <tr v-for="s in bp.consult.value.rows" :key="s.pid">
-              <td style="max-width:480px;overflow:hidden;text-overflow:ellipsis;">{{ s.name }}</td>
+              <td style="max-width:480px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><BpImage :product-id="s.pid" :size="40" /> {{ s.name }}</td>
               <td class="num">{{ bpNum(s.consult) }}</td>
             </tr>
           </tbody>
@@ -44,6 +44,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useBpData, bpMoney, bpNum, bpPct } from './bp-utils'
+import BpImage from './BpImage.vue'
 import { BP_ICONS } from './BpIcons'
 
 const bp = useBpData()
@@ -58,11 +59,11 @@ const searchComment = computed(() => {
   if (!kw.length) return '等待生成评语'
   const lines: string[] = []
   const s = kwSum.value
-  lines.push(`TOP10 搜索词合计访客 ${bpNum(s.vis)} / 成交买家 ${bpNum(s.buy)}，成交额 ${bpMoney(s.amt)}，整体转化 ${s.vis ? ((s.buy / s.vis) * 100).toFixed(1) : 0}%。`)
+  lines.push(`全部搜索词合计访客 ${bpNum(s.vis)} / 成交买家 ${bpNum(s.buy)}，成交额 ${bpMoney(s.amt)}，整体转化 ${s.vis ? ((s.buy / s.vis) * 100).toFixed(1) : 0}%。`)
   const convKw = kw.filter((x) => x.buy > 0)
   if (convKw.length) lines.push(`有成交词 ${convKw.length} 个：「${convKw.map((x) => x.word).join('」「')}」，其中「${convKw[0].word}」转化 ${convKw[0].conv != null ? bpPct(convKw[0].conv * 100) : '--'}、成交 ${bpMoney(convKw[0].amt)}。`)
-  else lines.push('TOP10 中暂无成交词，需检查商品标题与搜索词匹配度。')
-  lines.push(`访客来源集中：「${kw[0].word}」${kw[0].vis} 人占 TOP10 的 ${s.vis ? ((kw[0].vis / s.vis) * 100).toFixed(0) : 0}%，可围绕该词强化主图与标题。`)
+  else lines.push('全部搜索词中暂无成交词，需检查商品标题与搜索词匹配度。')
+  lines.push(`访客来源集中：「${kw[0].word}」${kw[0].vis} 人占全部的 ${s.vis ? ((kw[0].vis / s.vis) * 100).toFixed(0) : 0}%，可围绕该词强化主图与标题。`)
   return lines.map((x) => '· ' + x).join('\n')
 })
 const zxComment = computed(() => {
