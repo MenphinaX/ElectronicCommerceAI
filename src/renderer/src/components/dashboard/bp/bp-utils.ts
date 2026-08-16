@@ -82,11 +82,12 @@ export interface BpDailyRow {
   profit: number | null
   search: number | null
   consult: number | null
-  refund: number
+  refund: number | null
 }
 export interface BpProductDailyRowInput {
   date: string
   payAmountFen?: number | null
+  refundAmountFen?: number | null
   promoCostFen?: number | null
   profitFen?: number | null
   visitors?: number | null
@@ -95,17 +96,19 @@ export interface BpProductDailyRowInput {
 export interface BpDailySnapshot {
   d: string
   sales: number
+  refund: number | null
   promo: number
   profit: number
   search: number | null
   consult: number
 }
-/** 该日有 product_daily 行 → 真实值（含 0）；无行 → 回落 snapshot 当日，其余 null；refund 始终按退款分日 */
+/** 4U 口径：该日有 product_daily 行 → 真实值（含 0）；无行 → 回落 snapshot 当日，其余 null。
+ *  refund=该行 refundAmountFen（分→元，商品报表成功退款金额）；promo=promoByDay[d]（promo_daily 同主体当日 SUM），无推广行 → null */
 export function buildProductDailyRows(
   days: Array<{ d: string }>,
   productDailyRows: BpProductDailyRowInput[],
   snapshot: BpDailySnapshot | null,
-  refundByDay: Record<string, number> = {}
+  promoByDay: Record<string, number> = {}
 ): BpDailyRow[] {
   const byDate = new Map<string, BpProductDailyRowInput>()
   for (const r of productDailyRows) {
@@ -114,19 +117,18 @@ export function buildProductDailyRows(
   return days.map((day) => {
     const d = String(day.d)
     const row = byDate.get(d)
-    const refund = refundByDay[d] || 0
+    const isSnap = snapshot != null && d === snapshot.d
     if (row) {
       return {
         d,
         sales: (Number(row.payAmountFen) || 0) / 100,
-        promo: (Number(row.promoCostFen) || 0) / 100,
+        promo: promoByDay[d] != null ? promoByDay[d] : (isSnap ? snapshot.promo : null),
         profit: (Number(row.profitFen) || 0) / 100,
         search: row.visitors == null ? null : Number(row.visitors),
         consult: Number(row.consultCount) || 0,
-        refund
+        refund: (Number(row.refundAmountFen) || 0) / 100
       }
     }
-    const isSnap = snapshot != null && d === snapshot.d
     return {
       d,
       sales: isSnap ? snapshot.sales : null,
@@ -134,7 +136,7 @@ export function buildProductDailyRows(
       profit: isSnap ? snapshot.profit : null,
       search: isSnap ? snapshot.search : null,
       consult: isSnap ? snapshot.consult : null,
-      refund
+      refund: isSnap && snapshot ? snapshot.refund : null
     }
   })
 }
@@ -239,7 +241,7 @@ export function useBpData() {
       const refundDays = new Set(rb.list.filter((x) => x.fin).map((x) => x.fin)).size
       return {
         pid, name: r.productName == null ? null : String(r.productName),
-        sales: (Number(r.payAmountFen) || 0) / 100, refund: rb.total,
+        sales: (Number(r.payAmountFen) || 0) / 100, refund: (Number(r.refundAmountFen) || 0) / 100,
         promo: (Number(r.promoCostFen) || 0) / 100, profit: (Number(r.profitFen) || 0) / 100,
         search: r.visitors == null ? null : Number(r.visitors), consult: Number(r.consultCount) || 0,
         orders: Number(r.salesCount) || 0, days: Number(r.days) || 0, refundDays, status: null
@@ -256,7 +258,8 @@ export function useBpData() {
       spend: (Number(r.costFen) || 0) / 100, pay: (Number(r.payAmountFen) || 0) / 100,
       clicks: Number(r.clicks) || 0, impressions: Number(r.impressions) || 0,
       cr: r.ctr == null ? null : Number(r.ctr), orders: Number(r.salesCount) || 0,
-      roi: r.roas == null ? null : Number(r.roas), conv: r.payRate == null ? null : Number(r.payRate)
+      roi: r.netRoi == null ? (Number(r.costFen) > 0 ? (Number(r.payAmountFen) || 0) / Number(r.costFen) : null) : Number(r.netRoi),
+      conv: r.payRate == null ? null : Number(r.payRate)
     }))
   })
 
@@ -344,11 +347,11 @@ export function productComment(p: BpProductRow, rb: BpProductRefund, winLbl: str
 export function promoComment(x: BpPromoRow): string[] {
   const lines: string[] = []
   const roi = x.roi != null ? x.roi : x.spend ? x.pay / x.spend : 0
-  lines.push(`${x.name}（${x.pid}）花费 ${bpMoney(x.spend)}，展现 ${bpNum(x.impressions)}，点击 ${bpNum(x.clicks)}，点击率 ${x.cr != null ? bpPct(x.cr * 100) : '--'}，成交 ${bpMoney(x.pay)}（${x.orders} 笔），ROI ${roi.toFixed(1)}。`)
-  if (x.roi != null && x.roi < 1) lines.push(`风险：ROI ${x.roi.toFixed(1)} 低于 1，投产亏损，建议暂停或下调出价。`)
-  else if (x.roi != null && x.roi < 3) lines.push(`建议：ROI ${x.roi.toFixed(1)} 偏低，优化关键词与人群包后再放量。`)
-  else lines.push(`建议：ROI ${roi.toFixed(1)} 表现良好，可适度加大预算。`)
-  if (x.conv != null) lines.push(`点击转化率 ${bpPct(x.conv * 100)}，需结合落地页与详情页转化一起评估。`)
+  lines.push(`${x.name}（${x.pid}）花费 ${bpMoney(x.spend)}，展现 ${bpNum(x.impressions)}，点击 ${bpNum(x.clicks)}，点击率 ${x.cr != null ? bpPct(x.cr * 100, 2) : '--'}，成交 ${bpMoney(x.pay)}（${x.orders} 笔），净ROI ${roi.toFixed(1)}。`)
+  if (x.roi != null && x.roi < 1) lines.push(`风险：净ROI ${x.roi.toFixed(1)} 低于 1，投产亏损，建议暂停或下调出价。`)
+  else if (x.roi != null && x.roi < 3) lines.push(`建议：净ROI ${x.roi.toFixed(1)} 偏低，优化关键词与人群包后再放量。`)
+  else lines.push(`建议：净ROI ${roi.toFixed(1)} 表现良好，可适度加大预算。`)
+  if (x.conv != null) lines.push(`点击转化率 ${bpPct(x.conv * 100, 2)}，需结合落地页与详情页转化一起评估。`)
   return lines
 }
 

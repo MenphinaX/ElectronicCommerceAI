@@ -119,6 +119,8 @@ const api = {
     dayDetail: (opts: { shopId: number; date: string }): Promise<Record<string, unknown>> => ipcRenderer.invoke('dashboard:day-detail', opts),
     productDetail: (opts: { shopId: number; productId: string; from: string; to: string }): Promise<Record<string, unknown>> =>
       ipcRenderer.invoke('dashboard:product-detail', opts),
+    promoDailyByProducts: (opts: { shopId: number; productIds: string[]; from: string; to: string }): Promise<Record<string, Array<Record<string, unknown>>>> =>
+      ipcRenderer.invoke('dashboard:promo-daily-by-products', opts),
     compare: (opts: { shopIds: number[]; mode: 'yesterday' | '7' | '15' | '30'; today?: string }): Promise<Record<string, unknown>> =>
       ipcRenderer.invoke('dashboard:compare', opts)
   },

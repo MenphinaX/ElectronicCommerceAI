@@ -1,4 +1,4 @@
-﻿// 看板聚合查询（任务 4）：窗口口径 + 9 大区块数据，一律从 daily 表按 店铺+日期窗口 聚合
+// 看板聚合查询（任务 4）：窗口口径 + 9 大区块数据，一律从 daily 表按 店铺+日期窗口 聚合
 // 口径：金额=分、比率=0~1、日期=YYYY-MM-DD；窗口基准日=电脑当前日期
 import type { AppDatabase } from './database'
 import { dailyKpi } from './repo'
@@ -262,48 +262,57 @@ export interface PromoEntity {
   clicks: number
   costFen: number
   ctr: number | null
-  roas: number | null
+  netRoi: number | null
   payAmountFen: number
   salesCount: number
   payRate: number | null
+}
+
+/** 净ROI = 直接成交金额 ÷ 花费（领导口径 05：不用平台 roas；花费=0 → null 显示 --） */
+export function netRoiOf(payAmountFen: number | null | undefined, costFen: number | null | undefined): number | null {
+  const pay = Number(payAmountFen) || 0
+  const cost = Number(costFen) || 0
+  return cost > 0 ? pay / cost : null
 }
 
 export function promoBlock(db: AppDatabase, shopId: number, from: string, to: string, limit = 6): { totals: PromoEntity; entities: PromoEntity[] } {
   const rows = db.raw
     .prepare(`SELECT ad_entity_id AS adEntityId, MAX(ad_entity_name) AS adEntityName,
       COALESCE(SUM(impressions),0) AS impressions, COALESCE(SUM(clicks),0) AS clicks, COALESCE(SUM(cost_fen),0) AS costFen,
-      COALESCE(SUM(ctr*impressions),0) AS ctrW, COALESCE(SUM(roas*cost_fen),0) AS roasW,
+      COALESCE(SUM(ctr*impressions),0) AS ctrW,
       COALESCE(SUM(pay_amount_fen),0) AS payAmountFen, COALESCE(SUM(sales_count),0) AS salesCount,
       COALESCE(SUM(pay_rate*clicks),0) AS payRateW
       FROM promo_daily WHERE shop_id=@shopId AND date>=@from AND date<=@to
       GROUP BY ad_entity_id ORDER BY costFen DESC`)
     .all({ shopId, from, to }) as Array<Record<string, unknown>>
-  const map = (r: Record<string, unknown>): PromoEntity => ({
-    adEntityId: String(r.adEntityId), adEntityName: r.adEntityName == null ? null : String(r.adEntityName),
-    impressions: Number(r.impressions) || 0, clicks: Number(r.clicks) || 0, costFen: Number(r.costFen) || 0,
-    ctr: weightedAvg(Number(r.ctrW) || 0, Number(r.impressions) || 0),
-    roas: weightedAvg(Number(r.roasW) || 0, Number(r.costFen) || 0),
-    payAmountFen: Number(r.payAmountFen) || 0, salesCount: Number(r.salesCount) || 0,
-    payRate: weightedAvg(Number(r.payRateW) || 0, Number(r.clicks) || 0)
-  })
-  const totals = { impressions: 0, clicks: 0, costFen: 0, ctrW: 0, roasW: 0, payAmountFen: 0, salesCount: 0, payRateW: 0 }
+  const map = (r: Record<string, unknown>): PromoEntity => {
+    const costFen = Number(r.costFen) || 0
+    return {
+      adEntityId: String(r.adEntityId), adEntityName: r.adEntityName == null ? null : String(r.adEntityName),
+      impressions: Number(r.impressions) || 0, clicks: Number(r.clicks) || 0, costFen,
+      ctr: weightedAvg(Number(r.ctrW) || 0, Number(r.impressions) || 0),
+      netRoi: netRoiOf(Number(r.payAmountFen) || 0, costFen),
+      payAmountFen: Number(r.payAmountFen) || 0, salesCount: Number(r.salesCount) || 0,
+      payRate: weightedAvg(Number(r.payRateW) || 0, Number(r.clicks) || 0)
+    }
+  }
+  const totals = { impressions: 0, clicks: 0, costFen: 0, ctrW: 0, payAmountFen: 0, salesCount: 0, payRateW: 0 }
   for (const r of rows) {
     totals.impressions += Number(r.impressions) || 0
     totals.clicks += Number(r.clicks) || 0
     totals.costFen += Number(r.costFen) || 0
     totals.ctrW += Number(r.ctrW) || 0
-    totals.roasW += Number(r.roasW) || 0
     totals.payAmountFen += Number(r.payAmountFen) || 0
     totals.salesCount += Number(r.salesCount) || 0
     totals.payRateW += Number(r.payRateW) || 0
   }
   return {
-    totals: { adEntityId: 'ALL', adEntityName: null, impressions: totals.impressions, clicks: totals.clicks, costFen: totals.costFen, ctr: weightedAvg(totals.ctrW, totals.impressions), roas: weightedAvg(totals.roasW, totals.costFen), payAmountFen: totals.payAmountFen, salesCount: totals.salesCount, payRate: weightedAvg(totals.payRateW, totals.clicks) },
+    totals: { adEntityId: 'ALL', adEntityName: null, impressions: totals.impressions, clicks: totals.clicks, costFen: totals.costFen, ctr: weightedAvg(totals.ctrW, totals.impressions), netRoi: netRoiOf(totals.payAmountFen, totals.costFen), payAmountFen: totals.payAmountFen, salesCount: totals.salesCount, payRate: weightedAvg(totals.payRateW, totals.clicks) },
     entities: rows.slice(0, limit).map(map)
   }
 }
 
-// ---------- 推广明细（蓝本 05：单日快照按计划，花费>0 取 TOP，banner 由前端对 top 求和） ----------
+// ---------- 推广明细（05：商品报表按主体，花费>0 取 TOP，banner 由前端对 top 求和；净ROI=直接成交金额÷花费） ----------
 export interface PromoDetailRow {
   adEntityId: string
   adEntityName: string | null
@@ -311,19 +320,46 @@ export interface PromoDetailRow {
   clicks: number
   costFen: number
   ctr: number | null
-  roas: number | null
+  netRoi: number | null
   payAmountFen: number
   salesCount: number
   payRate: number | null
 }
 
 export function promoDetail(db: AppDatabase, shopId: number, from: string, to: string, limit = 12): PromoDetailRow[] {
-  return db.raw
+  const rows = db.raw
     .prepare(`SELECT ad_entity_id AS adEntityId, ad_entity_name AS adEntityName, impressions, clicks, cost_fen AS costFen,
-      ctr, roas, pay_amount_fen AS payAmountFen, sales_count AS salesCount, pay_rate AS payRate
+      ctr, pay_amount_fen AS payAmountFen, sales_count AS salesCount, pay_rate AS payRate
       FROM promo_daily WHERE shop_id=@shopId AND date>=@from AND date<=@to AND cost_fen>0
       ORDER BY cost_fen DESC LIMIT @limit`)
-    .all({ shopId, from, to, limit }) as unknown as PromoDetailRow[]
+    .all({ shopId, from, to, limit }) as Array<Record<string, unknown>>
+  return rows.map((r) => ({
+    adEntityId: String(r.adEntityId), adEntityName: r.adEntityName == null ? null : String(r.adEntityName),
+    impressions: Number(r.impressions) || 0, clicks: Number(r.clicks) || 0, costFen: Number(r.costFen) || 0,
+    ctr: r.ctr == null ? null : Number(r.ctr),
+    netRoi: netRoiOf(Number(r.payAmountFen) || 0, Number(r.costFen) || 0),
+    payAmountFen: Number(r.payAmountFen) || 0, salesCount: Number(r.salesCount) || 0,
+    payRate: r.payRate == null ? null : Number(r.payRate)
+  }))
+}
+
+// ---------- 推广按商品日花费（04 商品卡推广费口径：商品报表同主体ID=商品ID 花费相加，日=当日 SUM、窗口=窗口 SUM） ----------
+export function promoDailyByProduct(db: AppDatabase, shopId: number, productId: string, from: string, to: string): Array<{ date: string; costFen: number }> {
+  return db.raw
+    .prepare(`SELECT date, COALESCE(SUM(cost_fen),0) AS costFen FROM promo_daily
+      WHERE shop_id=@shopId AND ad_entity_id=@productId AND date>=@from AND date<=@to
+      GROUP BY date ORDER BY date`)
+    .all({ shopId, productId, from, to }) as Array<{ date: string; costFen: number }>
+}
+
+/** 批量版：一次 IPC 取窗口内全部商品（BpProducts 免逐品 N+1） */
+export function promoDailyByProducts(db: AppDatabase, shopId: number, productIds: string[], from: string, to: string): Record<string, Array<{ date: string; costFen: number }>> {
+  const out: Record<string, Array<{ date: string; costFen: number }>> = {}
+  for (const pid of productIds) {
+    if (!pid) continue
+    out[pid] = promoDailyByProduct(db, shopId, pid, from, to)
+  }
+  return out
 }
 
 // ---------- 商品咨询 TOP（蓝本 08：最近一日快照） ----------

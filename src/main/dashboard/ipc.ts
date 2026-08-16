@@ -1,9 +1,9 @@
-﻿// 看板 IPC（任务 4）：渲染层只走这里取聚合数据，不直接碰 SQL/文件
+// 看板 IPC（任务 4）：渲染层只走这里取聚合数据，不直接碰 SQL/文件
 import { ipcMain } from 'electron'
 import type { AppDatabase } from '../db/database'
 import {
   consultTop, coverage, csBlock, csDates, dsrBlock, keywordBlock, kpiBlock, monthBlock, monthlyProgress,
-  productCounts, productDailySeries, productTop, promoBlock, promoDetail, refundBlock, refundRows, shopCompare, todayStr,
+  productCounts, productDailySeries, productTop, promoBlock, promoDailyByProducts, promoDetail, refundBlock, refundRows, shopCompare, todayStr,
   windowRange, yesterdayGaps
 } from '../db/dashboard'
 import type { WindowMode } from '../db/dashboard'
@@ -89,6 +89,15 @@ export function registerDashboardIpc(getDb: () => AppDatabase): void {
     const ids = (opts.shopIds ?? []).filter((n) => Number(n) > 0)
     if (ids.length < 2) return { shops: [], rows: [], window: w, enough: false }
     return { ...shopCompare(db, ids, w.start, w.end), window: w, enough: true }
+  })
+
+  // 04 商品卡推广费口径：窗口内批量取各商品 promo_daily 按日 SUM(cost_fen)
+  ipcMain.handle('dashboard:promo-daily-by-products', (_e, opts: { shopId: number; productIds: string[]; from: string; to: string }) => {
+    const db = getDb()
+    const shopId = Number(opts.shopId) || 0
+    const ids = Array.isArray(opts.productIds) ? opts.productIds.map((x) => String(x)) : []
+    if (shopId <= 0 || !ids.length) return {}
+    return promoDailyByProducts(db, shopId, ids, String(opts.from ?? ''), String(opts.to ?? ''))
   })
 
   // 设置（数据库 settings 表）：月度目标等个性化项

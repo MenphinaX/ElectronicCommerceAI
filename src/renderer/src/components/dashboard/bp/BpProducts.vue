@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="prod-cards" id="prod-root">
-      <div v-for="(p, i) in bp.products.value" :key="p.pid" class="prod-card" :class="{ open: openProds.has(p.pid) }" :data-pid="p.pid">
+      <div v-for="(p, i) in prods" :key="p.pid" class="prod-card" :class="{ open: openProds.has(p.pid) }" :data-pid="p.pid">
         <div class="fold-wrap" @click="toggle('prod', p.pid)">
           <BpImage :product-id="p.pid" :size="76" />
           <div class="pinfo">
@@ -36,7 +36,7 @@
                       <div class="pd-st"><span>搜索人数 <i class="ghost">{{ winLbl }}</i></span><b>{{ bpNum(p.search) }}</b></div>
                       <div class="pd-st"><span>咨询人数 <i class="ghost">{{ winLbl }}</i></span><b>{{ bpNum(p.consult) }}</b></div>
                     </div>
-                    <div class="pd-note">窗口 {{ winLbl }}（{{ bp.winStart.value.slice(5) }}~{{ bp.winEnd.value.slice(5) }}）：退款金额按退款单真实汇总（{{ rbOf(p.pid).refundDays }}/{{ rbOf(p.pid).days }} 天有退款）；销售额/推广费/利润/搜索/咨询优先商品日报按日真实，缺日回落当日快照。</div>
+                    <div class="pd-note">窗口 {{ winLbl }}（{{ bp.winStart.value.slice(5) }}~{{ bp.winEnd.value.slice(5) }}）：退款金额=商品报表成功退款金额窗口相加；推广费=商品报表同主体花费窗口相加；销售额/利润/搜索/咨询优先商品日报按日真实，缺日回落当日快照。</div>
                     <div class="pd-note">主图已绑定商品 ID {{ p.pid }}：正式版上传后全看板复用，无需重复添加。点击占位可上传本地主图。</div>
                   </div>
                 </div>
@@ -48,14 +48,14 @@
                 </div>
               </div>
               <div class="pd-right">
-                <div class="pd-head"><span v-html="BP_ICONS.chart"></span> 每日数据 <span class="ghost" style="font-size:11px;font-weight:500;">[{{ winLbl }} {{ bp.winStart.value.slice(5) }}~{{ bp.winEnd.value.slice(5) }} · 退款分日真实]</span></div>
+                <div class="pd-head"><span v-html="BP_ICONS.chart"></span> 每日数据 <span class="ghost" style="font-size:11px;font-weight:500;">[{{ winLbl }} {{ bp.winStart.value.slice(5) }}~{{ bp.winEnd.value.slice(5) }} · 商品报表口径]</span></div>
                 <table class="pd-table">
                   <thead><tr><th>日期</th><th class="num">销售额</th><th class="num">退款金额</th><th class="num">推广费</th><th class="num">利润</th><th class="num">搜索人数</th><th class="num">咨询人数</th></tr></thead>
                   <tbody>
                     <tr v-for="r in dailyRows(p.pid)" :key="r.d">
                       <td class="mono">{{ r.d.slice(5) }}</td>
                       <td class="mono num" :class="r.sales == null ? 'na' : ''">{{ r.sales != null ? bpMoney(r.sales) : '—' }}</td>
-                      <td class="mono num" :class="r.refund > 0 ? 'bear' : 'ghost'">{{ r.refund ? bpMoney(r.refund) : '¥0' }}</td>
+                      <td class="mono num" :class="r.refund == null ? 'na' : (r.refund > 0 ? 'bear' : 'ghost')">{{ r.refund != null ? (r.refund ? bpMoney(r.refund) : '¥0') : '—' }}</td>
                       <td class="mono num" :class="r.promo == null ? 'na' : ''">{{ r.promo != null ? bpMoney(r.promo) : '—' }}</td>
                       <td class="mono num" :class="r.profit != null ? (r.profit >= 0 ? 'bull' : 'bear') : 'na'">{{ r.profit != null ? (r.profit >= 0 ? '+' : '') + bpNum(r.profit) : '—' }}</td>
                       <td class="mono num" :class="r.search == null ? 'na' : ''">{{ r.search != null ? bpNum(r.search) : '—' }}</td>
@@ -63,7 +63,7 @@
                     </tr>
                   </tbody>
                 </table>
-                <div class="pd-note">销售额/推广/利润/搜索/咨询优先商品日报按日真实，缺日回落当日快照；退款金额为退款单真实分日（无退款当日显示 ¥0）。</div>
+                <div class="pd-note">销售额/利润/搜索/咨询优先商品日报按日真实；退款金额=商品报表成功退款金额按日真实（无行回落快照/—）；推广费=商品报表同主体花费按日相加（无推广行回落快照/—）。</div>
                 <div class="pd-head"><span v-html="BP_ICONS.pin"></span> 单品退款拆解 <span class="ghost" style="font-size:11px;font-weight:500;">[窗口 {{ bp.winStart.value.slice(5) }} ~ {{ bp.winEnd.value.slice(5) }} · {{ rbOf(p.pid).totalN }} 笔]</span></div>
                 <div class="refund-bars">
                   <div class="rb-row"><span class="rb-label">未发货</span><div class="rb-track"><div class="rb-fill wf" :style="{ width: barW(rbOf(p.pid).wf, rbOf(p.pid).max) }"></div></div><span class="rb-val">{{ rbOf(p.pid).wfN }}笔/{{ bpMoney(rbOf(p.pid).wf) }}</span></div>
@@ -128,11 +128,33 @@ async function loadProductDaily(): Promise<void> {
     }
   }
 }
+// 4U：窗口内批量拉各商品 promo_daily 按日 SUM(cost_fen)（推广费口径=商品报表同主体花费相加）
+const promoDaily = reactive<Record<string, Array<{ date: string; costFen: number }>>>({})
+async function loadPromoDaily(): Promise<void> {
+  const list = bp.products.value
+  const from = bp.winStart.value
+  const to = bp.winEnd.value
+  if (!list.length || !from || !to) return
+  try {
+    const map = (await window.api.dashboard.promoDailyByProducts({ shopId: bp.shopId.value, productIds: list.map((x) => x.pid), from, to })) as Record<string, Array<{ date: string; costFen: number }>>
+    for (const p of list) promoDaily[p.pid] = map[p.pid] ?? []
+  } catch {
+    for (const p of list) promoDaily[p.pid] = []
+  }
+}
 watch(
   () => [bp.winStart.value, bp.winEnd.value, bp.products.value.map((x) => x.pid).join(',')],
-  () => { void loadProductDaily() },
+  () => { void loadProductDaily(); void loadPromoDaily() },
   { immediate: true }
 )
+// 卡片统计：退款=product_daily 窗口 SUM（bp.products 已按成功退款金额）；推广费=promo_daily 同主体窗口 SUM
+const prods = computed(() => {
+  const winPromo: Record<string, number> = {}
+  for (const [pid, rows] of Object.entries(promoDaily)) {
+    winPromo[pid] = rows.reduce((s, r) => s + (Number(r.costFen) || 0), 0) / 100
+  }
+  return bp.products.value.map((p) => ({ ...p, promo: winPromo[p.pid] ?? 0 }))
+})
 
 function toggle(kind: 'prod' | 'refund', pid: string): void {
   if (kind === 'prod') openProds.has(pid) ? openProds.delete(pid) : openProds.add(pid)
@@ -172,11 +194,10 @@ function ordersOf(pid: string) {
 }
 function dailyRows(pid: string) {
   const p = bp.products.value.find((x) => x.pid === pid)
-  const rb = bp.refundOf(pid)
-  const refundByDay: Record<string, number> = {}
-  rb.list.forEach((r) => { if (r.fin) refundByDay[r.fin] = (refundByDay[r.fin] || 0) + r.amount })
-  const snapshot = p ? { d: bp.lastDay.value, sales: p.sales, promo: p.promo, profit: p.profit, search: p.search, consult: p.consult } : null
-  return buildProductDailyRows(bp.days.value, (productDaily[pid] ?? []) as unknown as BpProductDailyRowInput[], snapshot, refundByDay)
+  const promoByDay: Record<string, number> = {}
+  for (const row of promoDaily[pid] ?? []) promoByDay[String(row.date)] = (Number(row.costFen) || 0) / 100
+  const snapshot = p ? { d: bp.lastDay.value, sales: p.sales, refund: p.refund, promo: prods.value.find((x) => x.pid === pid)?.promo ?? p.promo, profit: p.profit, search: p.search, consult: p.consult } : null
+  return buildProductDailyRows(bp.days.value, (productDaily[pid] ?? []) as unknown as BpProductDailyRowInput[], snapshot, promoByDay)
 }
 function itemComment(p: BpProductRow): string {
   const lines = productComment(p, bp.refundOf(p.pid), winLbl.value, bp.lastDay.value)

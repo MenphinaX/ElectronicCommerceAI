@@ -64,7 +64,7 @@ export interface ReportData {
   charts: {
     trend: { dates: string[]; pay: number[]; net: number[]; profit: number[] }
     product: { names: string[]; pay: number[] }
-    promo: { names: string[]; cost: number[]; roas: Array<number | null> }
+    promo: { names: string[]; cost: number[]; netRoi: Array<number | null> }
     refund: { names: string[]; fen: number[] }
     keyword: { names: string[]; visitors: number[] }
   }
@@ -232,8 +232,8 @@ export function buildReportData(db: AppDatabase, opts: ReportExportOpts): Report
     promo: {
       names: (promo.entities as Array<Record<string, unknown>>).map((e) => truncate(e.adEntityName || e.adEntityId, 16)),
       cost: (promo.entities as Array<Record<string, unknown>>).map((e) => Number(e.costFen) / 100),
-      roas: (promo.entities as Array<Record<string, unknown>>).map((e) => {
-        const r = Number(e.roas)
+      netRoi: (promo.entities as Array<Record<string, unknown>>).map((e) => {
+        const r = Number(e.netRoi)
         return Number.isFinite(r) ? r : null
       })
     },
@@ -331,9 +331,9 @@ function promoSection(data: ReportData): string {
   const entities = data.promo.entities
   const rows = entities.map((e) => `<tr><td>${escapeHtml(e.adEntityName || e.adEntityId)}</td><td class="mono">${escapeHtml(e.adEntityId)}</td>
     <td class="num">${yuan(e.costFen)}</td><td class="num">${num(e.impressions)}</td><td class="num">${num(e.clicks)}</td>
-    <td class="num">${pct(e.ctr)}</td><td class="num">${e.roas == null ? '--' : Number(e.roas).toFixed(2)}</td></tr>`).join('')
+    <td class="num">${pct(e.ctr)}</td><td class="num">${e.netRoi == null ? '--' : Number(e.netRoi).toFixed(2)}</td></tr>`).join('')
   const table = entities.length
-    ? `<div class="table-wrap"><table><thead><tr><th>推广主体</th><th>主体ID</th><th class="num">花费</th><th class="num">展现</th><th class="num">点击</th><th class="num">CTR</th><th class="num">ROI</th></tr></thead><tbody>${rows}</tbody></table></div>`
+    ? `<div class="table-wrap"><table><thead><tr><th>推广主体</th><th>主体ID</th><th class="num">花费</th><th class="num">展现</th><th class="num">点击</th><th class="num">CTR</th><th class="num">净ROI</th></tr></thead><tbody>${rows}</tbody></table></div>`
     : '<div class="empty">窗口内无推广数据</div>'
   return `<section class="card"><h2 class="sec-title">推广分析</h2><p class="sec-desc">按推广主体汇总花费与投入产出</p><div class="chart" id="chart-promo"></div>${table}</section>`
 }

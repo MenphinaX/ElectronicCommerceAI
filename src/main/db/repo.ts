@@ -906,6 +906,7 @@ export interface ImportCoverageRow {
   source: string
   label: string
   lastDate: string | null
+  delayDays: number | null
   todayImported: boolean
   coverageRange: string | null
   rows: number
@@ -919,17 +920,26 @@ function covToday(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
+/** 纯函数：YYYY-MM-DD 加减 n 天（本地时区，跨月/跨年正确） */
+export function addDays(dateStr: string, n: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  dt.setDate(dt.getDate() + n)
+  const pad = (x: number): string => String(x).padStart(2, '0')
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`
+}
+
 /** 9 源 → 业务表映射（dateExpr 为内部常量，非用户输入） */
-const COVERAGE_SOURCES: Array<{ source: string; label: string; table: string; dateExpr: string }> = [
-  { source: 'daily', label: '经营', table: 'daily_metrics', dateExpr: 'date' },
-  { source: 'product_report', label: '商品报表', table: 'product_daily', dateExpr: 'date' },
-  { source: 'product_detail', label: '商品总览', table: 'product_daily', dateExpr: 'date' },
-  { source: 'consult', label: '咨询', table: 'product_daily', dateExpr: 'date' },
-  { source: 'promo', label: '推广', table: 'promo_daily', dateExpr: 'date' },
-  { source: 'refund', label: '退款', table: 'refund_orders', dateExpr: 'substr(refund_finish_time,1,10)' },
-  { source: 'cs', label: '客服', table: 'cs_daily', dateExpr: 'date' },
-  { source: 'keyword', label: '搜索词', table: 'search_keywords', dateExpr: 'date' },
-  { source: 'dsr', label: 'DSR', table: 'dsr_daily', dateExpr: 'date' }
+const COVERAGE_SOURCES: Array<{ source: string; label: string; table: string; dateExpr: string; delayDays: number }> = [
+  { source: 'daily', label: '经营', table: 'daily_metrics', dateExpr: 'date', delayDays: 1 },
+  { source: 'product_report', label: '商品报表', table: 'product_daily', dateExpr: 'date', delayDays: 1 },
+  { source: 'product_detail', label: '商品总览', table: 'product_daily', dateExpr: 'date', delayDays: 1 },
+  { source: 'consult', label: '咨询', table: 'product_daily', dateExpr: 'date', delayDays: 1 },
+  { source: 'promo', label: '推广', table: 'promo_daily', dateExpr: 'date', delayDays: 1 },
+  { source: 'refund', label: '退款', table: 'refund_orders', dateExpr: 'substr(refund_finish_time,1,10)', delayDays: 1 },
+  { source: 'cs', label: '客服', table: 'cs_daily', dateExpr: 'date', delayDays: 3 },
+  { source: 'keyword', label: '搜索词', table: 'search_keywords', dateExpr: 'date', delayDays: 1 },
+  { source: 'dsr', label: 'DSR', table: 'dsr_daily', dateExpr: 'date', delayDays: 1 }
 ]
 
 export function getImportCoverage(db: AppDatabase, shopId: number, today = covToday()): ImportCoverageRow[] {
@@ -950,7 +960,8 @@ export function getImportCoverage(db: AppDatabase, shopId: number, today = covTo
       source: s.source,
       label: s.label,
       lastDate,
-      todayImported: !!lastDate && lastDate === today,
+      delayDays: s.delayDays,
+      todayImported: !!lastDate && lastDate >= addDays(today, -s.delayDays),
       coverageRange,
       rows: Number(agg.rows) || 0,
       lastSourceFile: imp?.sourceFile ?? null,
@@ -963,6 +974,7 @@ export function getImportCoverage(db: AppDatabase, shopId: number, today = covTo
     source: 'images',
     label: '图片',
     lastDate: null,
+    delayDays: null,
     todayImported: false,
     coverageRange: null,
     rows: Number(imgCount) || 0,

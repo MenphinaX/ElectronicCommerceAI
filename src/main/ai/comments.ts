@@ -124,7 +124,7 @@ export function buildWindowSummary(db: AppDatabase, shopId: number, w: WindowRan
   lines.push(`数据窗口：${w.label}（${w.start} ~ ${w.end}），环比上周期（${w.prevStart} ~ ${w.prevEnd}）`)
   lines.push(`核心指标：支付金额 ${fmtYuan(kpi.payAmountFen)}（环比 ${pctText(kpi.change.payAmountPct)}）、净销售额 ${fmtYuan(kpi.netSalesFen)}、利润 ${fmtYuan(kpi.profitFen)}、访客 ${kpi.visitors}、退款金额 ${fmtYuan(kpi.refundAmountFen)}、推广费 ${fmtYuan(kpi.promoCostFen)}、ROI ${kpi.roi == null ? '无数据' : kpi.roi.toFixed(2)}、支付转化率 ${pctText(kpi.payRate)}、退款率 ${pctText(kpi.refundRate)}`)
   if (products.length) lines.push(`商品 TOP：${products.map((p) => `${p.productName ?? p.productId} 支付 ${fmtYuan(p.payAmountFen)}`).join('；')}`)
-  if (promo.entities.length) lines.push(`推广 TOP：${promo.entities.slice(0, 3).map((e) => `${e.adEntityName ?? e.adEntityId} 花费 ${fmtYuan(e.costFen)} ROI ${e.roas == null ? '无' : e.roas.toFixed(2)}`).join('；')}`)
+  if (promo.entities.length) lines.push(`推广 TOP：${promo.entities.slice(0, 3).map((e) => `${e.adEntityName ?? e.adEntityId} 花费 ${fmtYuan(e.costFen)} 净ROI ${e.netRoi == null ? '无' : e.netRoi.toFixed(2)}`).join('；')}`)
   if (refund.total.count) lines.push(`退款：${refund.total.count} 单 ${fmtYuan(refund.total.fen)}，TOP 商品 ${refund.byProduct[0]?.productTitle ?? refund.byProduct[0]?.productId ?? '无'}`)
   const kwTop = (kw.top as Array<Record<string, unknown>>) ?? []
   if (kwTop.length) lines.push(`搜索词 TOP：${kwTop.slice(0, 3).map((k) => `${k.keyword} 访客 ${k.visitors} 支付 ${fmtYuan(Number(k.payAmountFen) || 0)}`).join('；')}`)

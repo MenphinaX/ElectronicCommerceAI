@@ -161,7 +161,7 @@ window.__REPORT_DATA__ = null;
       yAxis: Object.assign({ type: 'value' }, split),
       series: [
         { name: '推广花费', type: 'bar', barMaxWidth: 20, data: pm.cost, itemStyle: { color: '#1db954', borderRadius: [4, 4, 0, 0] } },
-        { name: 'ROI', type: 'line', smooth: true, symbolSize: 6, data: pm.roas, lineStyle: { color: '#f5a623' }, itemStyle: { color: '#f5a623' } }
+        { name: '净ROI', type: 'line', smooth: true, symbolSize: 6, data: pm.netRoi, lineStyle: { color: '#f5a623' }, itemStyle: { color: '#f5a623' } }
       ]
     });
   }

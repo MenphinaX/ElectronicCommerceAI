@@ -1,4 +1,4 @@
-﻿// 9 类数据源规格（任务 0 实测口径，来源 docs/数据源清单.md；列名按名称匹配不按位置）
+// 9 类数据源规格（任务 0 实测口径，来源 docs/数据源清单.md；列名按名称匹配不按位置）
 // 表头行/列数/必填列均为实测值；本地解析从严，任一项不过 → LLM 兜底/人工
 
 export type SourceType =
@@ -108,7 +108,7 @@ export const SPECS: SourceSpec[] = [
     requiredCols: {
       date: '日期', adEntityId: '主体ID', adEntityName: '主体名称', impressions: '展现量',
       clicks: '点击量', costFen: '花费', ctr: '点击率', roas: '投入产出比',
-      payAmountFen: '总成交金额', salesCount: '总成交笔数', payRate: '点击转化率'
+      payAmountFen: '直接成交金额', salesCount: '直接成交笔数', payRate: '点击转化率'
     },
     encoding: 'gbk',
     dateSource: 'column',

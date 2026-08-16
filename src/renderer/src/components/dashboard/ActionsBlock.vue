@@ -1,4 +1,4 @@
-﻿<!-- 建议动作区块（任务 4）：基于窗口真实数据的规则引擎（无 AI 也可用，数字可回溯） -->
+<!-- 建议动作区块（任务 4）：基于窗口真实数据的规则引擎（无 AI 也可用，数字可回溯） -->
 <script setup lang="ts">
 import { computed } from 'vue'
 import AppIcon from '../AppIcon.vue'
@@ -56,19 +56,19 @@ const actions = computed<Action[]>(() => {
   // P1 推广 ROI 偏低
   const promo = d.promo as Record<string, unknown> | undefined
   const promoTotal = promo?.totals as Record<string, unknown> | null | undefined
-  if (promoTotal && Number(promoTotal.costFen) > 0 && Number(promoTotal.roas) < 2) {
+  if (promoTotal && Number(promoTotal.costFen) > 0 && Number(promoTotal.netRoi) < 2) {
     out.push({
       level: 'P1', color: 'amber',
-      title: `推广整体 ROI ${Number(promoTotal.roas).toFixed(2)} 偏低`,
+      title: `推广整体净ROI ${Number(promoTotal.netRoi).toFixed(2)} 偏低`,
       detail: `近 ${d.window.label} 推广花费 ¥${yuan(promoTotal.costFen)}，投入产出比低于 2，建议调整出价与人群。`
     })
   }
-  const badEntities = ((promo?.entities ?? []) as Array<Record<string, unknown>>).filter((e) => Number(e.costFen) > 0 && Number(e.roas) < 1)
+  const badEntities = ((promo?.entities ?? []) as Array<Record<string, unknown>>).filter((e) => Number(e.costFen) > 0 && Number(e.netRoi) < 1)
   if (badEntities.length) {
     out.push({
       level: 'P1', color: 'amber',
-      title: `${badEntities.length} 个推广主体 ROI 低于 1`,
-      detail: badEntities.slice(0, 3).map((e) => `${e.adEntityName || e.adEntityId}（ROI ${Number(e.roas).toFixed(2)}）`).join('、') + (badEntities.length > 3 ? ` 等 ${badEntities.length} 个` : '') + '，建议暂停或优化。'
+      title: `${badEntities.length} 个推广主体净ROI 低于 1`,
+      detail: badEntities.slice(0, 3).map((e) => `${e.adEntityName || e.adEntityId}（净ROI ${Number(e.netRoi).toFixed(2)}）`).join('、') + (badEntities.length > 3 ? ` 等 ${badEntities.length} 个` : '') + '，建议暂停或优化。'
     })
   }
 

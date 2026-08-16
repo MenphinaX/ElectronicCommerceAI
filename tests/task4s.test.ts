@@ -17,11 +17,12 @@ interface BpDailyRow {
   profit: number | null
   search: number | null
   consult: number | null
-  refund: number
+  refund: number | null
 }
 interface BpDailySnapshot {
   d: string
   sales: number
+  refund: number | null
   promo: number
   profit: number
   search: number | null
@@ -30,6 +31,7 @@ interface BpDailySnapshot {
 interface BpProductDailyRowInput {
   date: string
   payAmountFen?: number | null
+  refundAmountFen?: number | null
   promoCostFen?: number | null
   profitFen?: number | null
   visitors?: number | null
@@ -39,7 +41,7 @@ type BuildProductDailyRowsFn = (
   days: Array<{ d: string }>,
   rows: BpProductDailyRowInput[],
   snapshot: BpDailySnapshot | null,
-  refundByDay?: Record<string, number>
+  promoByDay?: Record<string, number>
 ) => BpDailyRow[]
 
 const BP_UTILS_SPEC = '../src/renderer/src/components/dashboard/bp/bp-utils'
@@ -61,7 +63,7 @@ describe('4S buildProductDailyRows：按日真实优先，缺日回落快照', (
     { d: '2026-08-13' },
     { d: '2026-08-14' }
   ]
-  const snap: BpDailySnapshot = { d: '2026-08-14', sales: 999, promo: 88, profit: 77, search: 66, consult: 55 }
+  const snap: BpDailySnapshot = { d: '2026-08-14', sales: 999, refund: 42, promo: 88, profit: 77, search: 66, consult: 55 }
 
   it('该日有行 → 真实值（分→元换算，含 0 显示 0 非 null）', () => {
     const rows: BpProductDailyRowInput[] = [
@@ -69,14 +71,16 @@ describe('4S buildProductDailyRows：按日真实优先，缺日回落快照', (
       { date: '2026-08-13', payAmountFen: 0, promoCostFen: 0, profitFen: 0, visitors: 0, consultCount: 0 }
     ]
     const out = buildProductDailyRows(days, rows, snap, {})
-    expect(out[1]).toEqual({ d: '2026-08-12', sales: 123.45, promo: 0, profit: -5, search: 30, consult: 4, refund: 0 })
-    expect(out[2]).toEqual({ d: '2026-08-13', sales: 0, promo: 0, profit: 0, search: 0, consult: 0, refund: 0 })
+    // 4U 规格翻转：推广费改取 promo_daily 聚合，无推广行 → null（显示 —）
+    expect(out[1]).toEqual({ d: '2026-08-12', sales: 123.45, promo: null, profit: -5, search: 30, consult: 4, refund: 0 })
+    expect(out[2]).toEqual({ d: '2026-08-13', sales: 0, promo: null, profit: 0, search: 0, consult: 0, refund: 0 })
   })
 
   it('无行且非快照日 → 字段 null', () => {
     const out = buildProductDailyRows(days, [{ date: '2026-08-12', payAmountFen: 100 }], snap, {})
-    expect(out[0]).toEqual({ d: '2026-08-11', sales: null, promo: null, profit: null, search: null, consult: null, refund: 0 })
-    expect(out[3]).toEqual({ d: '2026-08-14', sales: 999, promo: 88, profit: 77, search: 66, consult: 55, refund: 0 })
+    // 4U 规格翻转：无行退款 → 回落快照/—（null），不再取退款单分日
+    expect(out[0]).toEqual({ d: '2026-08-11', sales: null, promo: null, profit: null, search: null, consult: null, refund: null })
+    expect(out[3]).toEqual({ d: '2026-08-14', sales: 999, promo: 88, profit: 77, search: 66, consult: 55, refund: 42 })
   })
 
   it('无行但为快照日 → 回落快照当日', () => {
@@ -86,7 +90,7 @@ describe('4S buildProductDailyRows：按日真实优先，缺日回落快照', (
     expect(out[3].profit).toBe(77)
     expect(out[3].search).toBe(66)
     expect(out[3].consult).toBe(55)
-    expect(out[3].refund).toBe(0)
+    expect(out[3].refund).toBe(42) // 4U 规格翻转：快照日回落 snapshot.refund
   })
 
   it('快照为 null → 全部回落 null', () => {
@@ -95,13 +99,16 @@ describe('4S buildProductDailyRows：按日真实优先，缺日回落快照', (
     expect(out).toHaveLength(4)
   })
 
-  it('refund 保持退款分日（与 product_daily 行无关）', () => {
-    const refundByDay: Record<string, number> = { '2026-08-11': 12.34, '2026-08-13': 5 }
-    const out = buildProductDailyRows(days, [{ date: '2026-08-12', payAmountFen: 100 }], snap, refundByDay)
-    expect(out[0].refund).toBe(12.34)
-    expect(out[1].refund).toBe(0)
-    expect(out[2].refund).toBe(5)
-    expect(out[3].refund).toBe(0)
+  it('refund 按商品日报 refundAmountFen（4U 规格翻转：删除退款单 refundByDay 入参，退款=成功退款金额）', () => {
+    const rows: BpProductDailyRowInput[] = [
+      { date: '2026-08-12', payAmountFen: 100, refundAmountFen: 1234 },
+      { date: '2026-08-13', payAmountFen: 100, refundAmountFen: 0 }
+    ]
+    const out = buildProductDailyRows(days, rows, snap, {})
+    expect(out[0].refund).toBeNull() // 无行非快照日 → —
+    expect(out[1].refund).toBe(12.34) // 行内真实值（分→元）
+    expect(out[2].refund).toBe(0) // 行内 0 → 真实值 0
+    expect(out[3].refund).toBe(42) // 快照日回落 snapshot.refund
   })
 
   it('visitors 为 null → search 为 null（其余真实）', () => {
@@ -159,7 +166,7 @@ describe('4S getImportCoverage：9 源+图片聚合', () => {
     db.close()
   })
 
-  it('今日判定：lastDate === today → true；昨天 → false', () => {
+  it('今日判定（4T 规格翻转）：T-1 源 lastDate=today → true、lastDate=today-1 → true（平台延迟内均算已交）', () => {
     const db = freshDb()
     const shopId = upsertShop(db, { name: '今日店' })
     upsertDailyMetric(db, { shopId, date: '2026-08-16', payAmountFen: 1, netSalesFen: 1, profitFen: 1, visitors: 1, refundAmountFen: 0, promoCostFen: 0 })
@@ -167,7 +174,7 @@ describe('4S getImportCoverage：9 源+图片聚合', () => {
     const cov = getImportCoverage(db, shopId, '2026-08-16')
     const by = Object.fromEntries(cov.map((r) => [r.source, r]))
     expect(by.daily.todayImported).toBe(true)
-    expect(by.promo.todayImported).toBe(false)
+    expect(by.promo.todayImported).toBe(true)
     db.close()
   })
 

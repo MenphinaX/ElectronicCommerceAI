@@ -79,6 +79,7 @@ export interface PreloadApi {
     get(opts: { shopId: number; mode: 'yesterday' | '7' | '15' | '30'; today?: string }): Promise<Record<string, unknown>>
     dayDetail(opts: { shopId: number; date: string }): Promise<Record<string, unknown>>
     productDetail(opts: { shopId: number; productId: string; from: string; to: string }): Promise<Record<string, unknown>>
+    promoDailyByProducts(opts: { shopId: number; productIds: string[]; from: string; to: string }): Promise<Record<string, Array<Record<string, unknown>>>>
     compare(opts: { shopIds: number[]; mode: 'yesterday' | '7' | '15' | '30'; today?: string }): Promise<Record<string, unknown>>
   }
   productImages: {
