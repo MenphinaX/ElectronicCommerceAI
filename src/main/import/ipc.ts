@@ -3,7 +3,7 @@ import { app, dialog, ipcMain, safeStorage, shell } from 'electron'
 import { join } from 'node:path'
 import type { AppDatabase } from '../db/database'
 import {
-  deleteImportRecord, deleteShop, getDefaultShopId, getSetting, listImportsWithShop,
+  deleteImportRecord, deleteShop, getDefaultShopId, getImportCoverage, getSetting, listImportsWithShop,
   listShops, setDefaultShopId, setSetting, updateShop, upsertShop
 } from '../db/repo'
 import { importFiles } from './import-service'
@@ -111,6 +111,9 @@ export function registerImportIpc(getDb: () => AppDatabase): void {
     }
     return { ok: true, records: rowsToRecords(parsed), issues: [], rows: parsed.dataRows }
   })
+
+  // ---------- 数据覆盖（4S）：9 源+图片聚合，供导入中心「数据覆盖」tab ----------
+  ipcMain.handle('imports:coverage', (_e, shopId: number) => getImportCoverage(getDb(), Number(shopId) || 0))
 
   // ---------- 导入历史 ----------
   ipcMain.handle('import:history', () => listImportsWithShop(getDb()))

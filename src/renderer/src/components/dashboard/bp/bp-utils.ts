@@ -74,6 +74,70 @@ export interface BpProductRow {
   pid: string; name: string | null; sales: number; refund: number; promo: number; profit: number
   search: number | null; consult: number; orders: number; days: number; refundDays: number; status: string | null
 }
+// ---------- 商品卡每日数据（4S：product_daily 按日真实优先，缺日回落快照当日；refund 保持退款分日） ----------
+export interface BpDailyRow {
+  d: string
+  sales: number | null
+  promo: number | null
+  profit: number | null
+  search: number | null
+  consult: number | null
+  refund: number
+}
+export interface BpProductDailyRowInput {
+  date: string
+  payAmountFen?: number | null
+  promoCostFen?: number | null
+  profitFen?: number | null
+  visitors?: number | null
+  consultCount?: number | null
+}
+export interface BpDailySnapshot {
+  d: string
+  sales: number
+  promo: number
+  profit: number
+  search: number | null
+  consult: number
+}
+/** 该日有 product_daily 行 → 真实值（含 0）；无行 → 回落 snapshot 当日，其余 null；refund 始终按退款分日 */
+export function buildProductDailyRows(
+  days: Array<{ d: string }>,
+  productDailyRows: BpProductDailyRowInput[],
+  snapshot: BpDailySnapshot | null,
+  refundByDay: Record<string, number> = {}
+): BpDailyRow[] {
+  const byDate = new Map<string, BpProductDailyRowInput>()
+  for (const r of productDailyRows) {
+    if (r && r.date != null && r.date !== '') byDate.set(String(r.date), r)
+  }
+  return days.map((day) => {
+    const d = String(day.d)
+    const row = byDate.get(d)
+    const refund = refundByDay[d] || 0
+    if (row) {
+      return {
+        d,
+        sales: (Number(row.payAmountFen) || 0) / 100,
+        promo: (Number(row.promoCostFen) || 0) / 100,
+        profit: (Number(row.profitFen) || 0) / 100,
+        search: row.visitors == null ? null : Number(row.visitors),
+        consult: Number(row.consultCount) || 0,
+        refund
+      }
+    }
+    const isSnap = snapshot != null && d === snapshot.d
+    return {
+      d,
+      sales: isSnap ? snapshot.sales : null,
+      promo: isSnap ? snapshot.promo : null,
+      profit: isSnap ? snapshot.profit : null,
+      search: isSnap ? snapshot.search : null,
+      consult: isSnap ? snapshot.consult : null,
+      refund
+    }
+  })
+}
 export interface BpDsrRow { indicator: string; score: number | null; industryAvg: number | null; compareText: string | null; gapText: string | null }
 export interface BpDsrMap { date: string | null; desc: BpDsrRow; service: BpDsrRow; logistics: BpDsrRow }
 export function useBpData() {

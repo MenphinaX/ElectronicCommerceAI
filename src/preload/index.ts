@@ -1,4 +1,4 @@
-﻿import { contextBridge, ipcRenderer, webUtils } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 // 渲染层唯一入口：窗口控制 / 设置读写 / 验收截图
 const api = {
@@ -101,7 +101,8 @@ const api = {
     llmConfigSet: (cfg: { baseUrl: string; model: string; apiKey: string }): Promise<{ ok: boolean }> => ipcRenderer.invoke('import:llm-config-set', cfg),
     templates: (): Promise<{ dir: string; items: Array<Record<string, unknown>> }> => ipcRenderer.invoke('import:templates'),
     templatesSaveTo: (): Promise<Record<string, unknown>> => ipcRenderer.invoke('import:templates-save'),
-    templatesOpen: (): Promise<{ dir: string }> => ipcRenderer.invoke('import:templates-open')
+    templatesOpen: (): Promise<{ dir: string }> => ipcRenderer.invoke('import:templates-open'),
+    importCoverage: (shopId: number): Promise<Array<Record<string, unknown>>> => ipcRenderer.invoke('imports:coverage', shopId)
   },
   webUtils: {
     getPathForFile: (file: File): string => {

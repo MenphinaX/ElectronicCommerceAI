@@ -36,7 +36,7 @@
                       <div class="pd-st"><span>搜索人数 <i class="ghost">{{ winLbl }}</i></span><b>{{ bpNum(p.search) }}</b></div>
                       <div class="pd-st"><span>咨询人数 <i class="ghost">{{ winLbl }}</i></span><b>{{ bpNum(p.consult) }}</b></div>
                     </div>
-                    <div class="pd-note">窗口 {{ winLbl }}（{{ bp.winStart.value.slice(5) }}~{{ bp.winEnd.value.slice(5) }}）：退款金额按退款单真实汇总（{{ rbOf(p.pid).refundDays }}/{{ rbOf(p.pid).days }} 天有退款）；销售额/推广费/利润/搜索/咨询为商品报表 {{ bp.lastDay.value.slice(5) }} 单日快照（模板仅导出单日）。</div>
+                    <div class="pd-note">窗口 {{ winLbl }}（{{ bp.winStart.value.slice(5) }}~{{ bp.winEnd.value.slice(5) }}）：退款金额按退款单真实汇总（{{ rbOf(p.pid).refundDays }}/{{ rbOf(p.pid).days }} 天有退款）；销售额/推广费/利润/搜索/咨询优先商品日报按日真实，缺日回落当日快照。</div>
                     <div class="pd-note">主图已绑定商品 ID {{ p.pid }}：正式版上传后全看板复用，无需重复添加。点击占位可上传本地主图。</div>
                   </div>
                 </div>
@@ -63,7 +63,7 @@
                     </tr>
                   </tbody>
                 </table>
-                <div class="pd-note">退款金额为退款单真实分日（无退款当日显示 ¥0）；销售额/推广费/利润/搜索/咨询模板仅导出 {{ bp.lastDay.value.slice(5) }} 单日（商品报表），其余日期暂无数据（—）。</div>
+                <div class="pd-note">销售额/推广/利润/搜索/咨询优先商品日报按日真实，缺日回落当日快照；退款金额为退款单真实分日（无退款当日显示 ¥0）。</div>
                 <div class="pd-head"><span v-html="BP_ICONS.pin"></span> 单品退款拆解 <span class="ghost" style="font-size:11px;font-weight:500;">[窗口 {{ bp.winStart.value.slice(5) }} ~ {{ bp.winEnd.value.slice(5) }} · {{ rbOf(p.pid).totalN }} 笔]</span></div>
                 <div class="refund-bars">
                   <div class="rb-row"><span class="rb-label">未发货</span><div class="rb-track"><div class="rb-fill wf" :style="{ width: barW(rbOf(p.pid).wf, rbOf(p.pid).max) }"></div></div><span class="rb-val">{{ rbOf(p.pid).wfN }}笔/{{ bpMoney(rbOf(p.pid).wf) }}</span></div>
@@ -101,8 +101,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
-import { useBpData, productComment, bpMoney, bpNum, type BpProductRow } from './bp-utils'
+import { computed, reactive, watch } from 'vue'
+import { useBpData, productComment, buildProductDailyRows, bpMoney, bpNum, type BpProductRow, type BpProductDailyRowInput } from './bp-utils'
 import { BP_ICONS } from './BpIcons'
 import BpImage from './BpImage.vue'
 
@@ -111,6 +111,28 @@ const winLbl = computed(() => bp.winLbl.value)
 const openProds = reactive(new Set<string>())
 const openProdOrders = reactive(new Set<string>())
 const prodRefundTabs = reactive<Record<string, number>>({})
+
+// 4S：窗口内每商品 product_daily 按日真实数据（一次 IPC 查该商品全部日期，免逐日 N+1）
+const productDaily = reactive<Record<string, Array<Record<string, unknown>>>>({})
+async function loadProductDaily(): Promise<void> {
+  const list = bp.products.value
+  const from = bp.winStart.value
+  const to = bp.winEnd.value
+  if (!list.length || !from || !to) return
+  for (const p of list) {
+    try {
+      const d = (await window.api.dashboard.productDetail({ shopId: bp.shopId.value, productId: p.pid, from, to })) as { series?: Array<Record<string, unknown>> }
+      productDaily[p.pid] = d.series ?? []
+    } catch {
+      productDaily[p.pid] = []
+    }
+  }
+}
+watch(
+  () => [bp.winStart.value, bp.winEnd.value, bp.products.value.map((x) => x.pid).join(',')],
+  () => { void loadProductDaily() },
+  { immediate: true }
+)
 
 function toggle(kind: 'prod' | 'refund', pid: string): void {
   if (kind === 'prod') openProds.has(pid) ? openProds.delete(pid) : openProds.add(pid)
@@ -153,17 +175,8 @@ function dailyRows(pid: string) {
   const rb = bp.refundOf(pid)
   const refundByDay: Record<string, number> = {}
   rb.list.forEach((r) => { if (r.fin) refundByDay[r.fin] = (refundByDay[r.fin] || 0) + r.amount })
-  return bp.days.value.map((d) => {
-    const isSnap = d.d === bp.lastDay.value
-    return {
-      d: d.d, refund: refundByDay[d.d] || 0,
-      sales: isSnap && p ? p.sales : null,
-      promo: isSnap && p ? p.promo : null,
-      profit: isSnap && p ? p.profit : null,
-      search: isSnap && p && p.search != null ? p.search : null,
-      consult: isSnap && p ? p.consult : null
-    }
-  })
+  const snapshot = p ? { d: bp.lastDay.value, sales: p.sales, promo: p.promo, profit: p.profit, search: p.search, consult: p.consult } : null
+  return buildProductDailyRows(bp.days.value, (productDaily[pid] ?? []) as unknown as BpProductDailyRowInput[], snapshot, refundByDay)
 }
 function itemComment(p: BpProductRow): string {
   const lines = productComment(p, bp.refundOf(p.pid), winLbl.value, bp.lastDay.value)

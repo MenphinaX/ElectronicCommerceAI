@@ -1,5 +1,5 @@
 // 任务 6 聊天质检 IPC：三格式解析预览 + 可编辑提示词 + 流式质检 + 历史留痕
-import { ipcMain } from 'electron'
+import { app, ipcMain } from 'electron'
 import { appendFileSync, existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { AppDatabase } from '../db/database'
@@ -11,11 +11,17 @@ import {
   parseQaText, qaStats, splitQaBatches, withQaTruncationNote, type QaMessage
 } from './qa-service'
 
-const DEFAULT_PROMPT_FILE = 'C:\\Users\\Administrator\\Desktop\\客服聊天记录质检提示词.txt'
+// 4S：默认提示词内置（随安装包分发），不再依赖桌面绝对路径；用户编辑仍存 settings.qaPromptText 并优先
+function defaultPromptPath(): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, 'resources', 'qa-default-prompt.md')
+    : join(app.getAppPath(), 'resources', 'qa-default-prompt.md')
+}
 
 function loadDefaultPrompt(): string {
   try {
-    if (existsSync(DEFAULT_PROMPT_FILE)) return readFileSync(DEFAULT_PROMPT_FILE, 'utf8')
+    const p = defaultPromptPath()
+    if (existsSync(p)) return readFileSync(p, 'utf8')
   } catch {
     // 忽略读取失败，返回空模板
   }
@@ -54,11 +60,11 @@ export function registerQaIpc(getDb: () => AppDatabase): void {
     return { files, records, stats: qaStats(records) }
   })
 
-  // 提示词：默认载入 Desktop 提示词文件全文（原样），编辑保存到 settings 表，恢复默认重新读文件
+  // 提示词：默认载入内置提示词全文，编辑保存到 settings 表，恢复默认重新读内置资源
   ipcMain.handle('qa:prompt-get', () => {
     const defaultText = loadDefaultPrompt()
     const saved = getSetting(getDb(), 'qaPromptText')
-    return { defaultText, currentText: saved ?? defaultText, sourceFile: DEFAULT_PROMPT_FILE, exists: defaultText.length > 0 }
+    return { defaultText, currentText: saved ?? defaultText, sourceFile: '内置默认提示词', exists: defaultText.length > 0 }
   })
   ipcMain.handle('qa:prompt-set', (_e, text: string) => {
     setSetting(getDb(), 'qaPromptText', String(text ?? ''))

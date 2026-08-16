@@ -900,3 +900,74 @@ export function deleteCalculatorRun(db: AppDatabase, id: number): boolean {
   const info = db.raw.prepare('DELETE FROM calculator_runs WHERE id = ?').run(id)
   return info.changes > 0
 }
+
+// ---------- 数据覆盖（4S）：9 源+图片聚合（MAX(date)+COUNT；来源文件取 imports 同 shop 最近一条） ----------
+export interface ImportCoverageRow {
+  source: string
+  label: string
+  lastDate: string | null
+  todayImported: boolean
+  coverageRange: string | null
+  rows: number
+  lastSourceFile: string | null
+  lastImportedAt: string | null
+}
+
+function covToday(): string {
+  const d = new Date()
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** 9 源 → 业务表映射（dateExpr 为内部常量，非用户输入） */
+const COVERAGE_SOURCES: Array<{ source: string; label: string; table: string; dateExpr: string }> = [
+  { source: 'daily', label: '经营', table: 'daily_metrics', dateExpr: 'date' },
+  { source: 'product_report', label: '商品报表', table: 'product_daily', dateExpr: 'date' },
+  { source: 'product_detail', label: '商品总览', table: 'product_daily', dateExpr: 'date' },
+  { source: 'consult', label: '咨询', table: 'product_daily', dateExpr: 'date' },
+  { source: 'promo', label: '推广', table: 'promo_daily', dateExpr: 'date' },
+  { source: 'refund', label: '退款', table: 'refund_orders', dateExpr: 'substr(refund_finish_time,1,10)' },
+  { source: 'cs', label: '客服', table: 'cs_daily', dateExpr: 'date' },
+  { source: 'keyword', label: '搜索词', table: 'search_keywords', dateExpr: 'date' },
+  { source: 'dsr', label: 'DSR', table: 'dsr_daily', dateExpr: 'date' }
+]
+
+export function getImportCoverage(db: AppDatabase, shopId: number, today = covToday()): ImportCoverageRow[] {
+  const sid = Number(shopId) || 0
+  const out: ImportCoverageRow[] = []
+  for (const s of COVERAGE_SOURCES) {
+    const agg = db.raw
+      .prepare(`SELECT MAX(${s.dateExpr}) AS lastDate, MIN(${s.dateExpr}) AS minDate, COUNT(*) AS rows FROM ${s.table} WHERE shop_id=@shopId`)
+      .get({ shopId: sid }) as { lastDate: string | null; minDate: string | null; rows: number }
+    const imp = db.raw
+      .prepare('SELECT source_file AS sourceFile, imported_at AS importedAt FROM imports WHERE shop_id=@shopId AND source_type=@source ORDER BY id DESC LIMIT 1')
+      .get({ shopId: sid, source: s.source }) as { sourceFile: string; importedAt: string } | undefined
+    const lastDate = agg.lastDate ?? null
+    const coverageRange = lastDate
+      ? agg.minDate && agg.minDate !== lastDate ? `${agg.minDate}~${lastDate}` : lastDate
+      : null
+    out.push({
+      source: s.source,
+      label: s.label,
+      lastDate,
+      todayImported: !!lastDate && lastDate === today,
+      coverageRange,
+      rows: Number(agg.rows) || 0,
+      lastSourceFile: imp?.sourceFile ?? null,
+      lastImportedAt: imp?.importedAt ?? null
+    })
+  }
+  // 图片：product_images COUNT（无日期列，仅行数）
+  const imgCount = (db.raw.prepare('SELECT COUNT(*) AS n FROM product_images WHERE shop_id=@shopId').get({ shopId: sid }) as { n: number }).n
+  out.push({
+    source: 'images',
+    label: '图片',
+    lastDate: null,
+    todayImported: false,
+    coverageRange: null,
+    rows: Number(imgCount) || 0,
+    lastSourceFile: null,
+    lastImportedAt: null
+  })
+  return out
+}

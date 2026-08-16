@@ -6,11 +6,12 @@ import ImportPanel from '../components/import/ImportPanel.vue'
 import ImportHistory from '../components/import/ImportHistory.vue'
 import FixCenter from '../components/import/FixCenter.vue'
 import TemplateDownloads from '../components/import/TemplateDownloads.vue'
+import ImportCoverage from '../components/import/ImportCoverage.vue'
 import DataPackagePanel from '../components/package/DataPackagePanel.vue'
 import { useShopsStore } from '../stores/shops'
 import { useCommentsStore } from '../stores/comments'
 
-const tab = ref<'shop' | 'import' | 'fix' | 'tpl' | 'pkg'>('import')
+const tab = ref<'shop' | 'import' | 'fix' | 'tpl' | 'pkg' | 'cov'>('import')
 const shops = useShopsStore()
 const historyRef = ref<InstanceType<typeof ImportHistory> | null>(null)
 const fixRef = ref<InstanceType<typeof FixCenter> | null>(null)
@@ -24,7 +25,8 @@ const tabs = [
   { id: 'shop', label: '店铺管理', icon: 'store' },
   { id: 'fix', label: '人工处理', icon: 'tool' },
   { id: 'tpl', label: '模板下载', icon: 'download' },
-  { id: 'pkg', label: '数据包', icon: 'archive' }
+  { id: 'pkg', label: '数据包', icon: 'archive' },
+  { id: 'cov', label: '数据覆盖', icon: 'db' }
 ] as const
 </script>
 
@@ -55,8 +57,11 @@ const tabs = [
     <template v-else-if="tab === 'pkg'">
       <DataPackagePanel />
     </template>
-    <template v-else>
+    <template v-else-if="tab === 'tpl'">
       <TemplateDownloads />
+    </template>
+    <template v-else>
+      <ImportCoverage />
     </template>
 
     <template v-if="tab === 'import'">

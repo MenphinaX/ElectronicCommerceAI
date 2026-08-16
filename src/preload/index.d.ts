@@ -1,4 +1,4 @@
-﻿// 渲染层 window.api 类型声明（与 preload/index.ts 保持同构）
+// 渲染层 window.api 类型声明（与 preload/index.ts 保持同构）
 export type LicenseReason = 'ok' | 'no-license' | 'corrupt' | 'invalid-signature' | 'machine-mismatch' | 'expired'
 
 export interface LicenseState {
@@ -70,6 +70,7 @@ export interface PreloadApi {
     templates(): Promise<{ dir: string; items: Array<Record<string, unknown>> }>
     templatesSaveTo(): Promise<Record<string, unknown>>
     templatesOpen(): Promise<{ dir: string }>
+    importCoverage(shopId: number): Promise<Array<Record<string, unknown>>>
   }
   webUtils: {
     getPathForFile(file: File): string
