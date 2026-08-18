@@ -171,6 +171,8 @@ describe('4S getImportCoverage：9 源+图片聚合', () => {
     const shopId = upsertShop(db, { name: '今日店' })
     upsertDailyMetric(db, { shopId, date: '2026-08-16', payAmountFen: 1, netSalesFen: 1, profitFen: 1, visitors: 1, refundAmountFen: 0, promoCostFen: 0 })
     upsertPromoDaily(db, { shopId, date: '2026-08-15', adEntityId: 'A1', impressions: 1, clicks: 1, costFen: 1 })
+    insertImport(db, { shopId, sourceType: 'daily', sourceFile: '经营-08-16.xlsx', rowCount: 1, dateEnd: '2026-08-16', status: 'ok' })
+    insertImport(db, { shopId, sourceType: 'promo', sourceFile: '推广-08-15.xlsx', rowCount: 1, dateEnd: '2026-08-15', status: 'ok' })
     const cov = getImportCoverage(db, shopId, '2026-08-16')
     const by = Object.fromEntries(cov.map((r) => [r.source, r]))
     expect(by.daily.todayImported).toBe(true)

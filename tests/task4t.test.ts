@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { AppDatabase } from '../src/main/db/database'
 import {
-  addDays, getImportCoverage, upsertCsDaily, upsertDailyMetric, upsertPromoDaily, upsertProductImage, upsertShop
+  addDays, getImportCoverage, insertImport, upsertCsDaily, upsertDailyMetric, upsertPromoDaily, upsertProductImage, upsertShop
 } from '../src/main/db/repo'
 
 function freshDb(): AppDatabase {
@@ -43,6 +43,7 @@ describe('4T getImportCoverage：按源延迟判定 todayImported', () => {
     const db = freshDb()
     const shopId = upsertShop(db, { name: 'cs边界店' })
     upsertCsDaily(db, { shopId, date: '2026-08-13', staffName: '张三', inquiryCount: 1 })
+    insertImport(db, { shopId, sourceType: 'cs', sourceFile: '客服-08-13.csv', rowCount: 1, dateEnd: '2026-08-13', status: 'ok' })
     const cov = getImportCoverage(db, shopId, '2026-08-16')
     const by = Object.fromEntries(cov.map((r) => [r.source, r]))
     expect(by.cs.todayImported).toBe(true)
@@ -63,6 +64,7 @@ describe('4T getImportCoverage：按源延迟判定 todayImported', () => {
     const db = freshDb()
     const shopId = upsertShop(db, { name: '普通边界店' })
     upsertDailyMetric(db, { shopId, date: '2026-08-15', payAmountFen: 1, netSalesFen: 1, profitFen: 1, visitors: 1, refundAmountFen: 0, promoCostFen: 0 })
+    insertImport(db, { shopId, sourceType: 'daily', sourceFile: '经营-08-15.xlsx', rowCount: 1, dateEnd: '2026-08-15', status: 'ok' })
     const cov = getImportCoverage(db, shopId, '2026-08-16')
     const by = Object.fromEntries(cov.map((r) => [r.source, r]))
     expect(by.daily.todayImported).toBe(true)
@@ -119,6 +121,7 @@ describe('4T getImportCoverage：按源延迟判定 todayImported', () => {
     const db = freshDb()
     const shopId = upsertShop(db, { name: 'cs区间店' })
     upsertCsDaily(db, { shopId, date: '2026-08-15', staffName: '张三', inquiryCount: 1 })
+    insertImport(db, { shopId, sourceType: 'cs', sourceFile: '客服-08-15.csv', rowCount: 1, dateEnd: '2026-08-15', status: 'ok' })
     const cov = getImportCoverage(db, shopId, '2026-08-16')
     const by = Object.fromEntries(cov.map((r) => [r.source, r]))
     expect(by.cs.todayImported).toBe(true)

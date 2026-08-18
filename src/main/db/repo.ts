@@ -964,12 +964,24 @@ export function getImportCoverage(db: AppDatabase, shopId: number, today = covTo
     const coverageRange = lastDate
       ? agg.minDate && agg.minDate !== lastDate ? `${agg.minDate}~${lastDate}` : lastDate
       : null
+    // 任务 4X：todayImported 改 imports 驱动——该源最近一次成功导入（status='ok' 且 date_end 非空）的
+    // MAX(date_end) ≥ today-delayDays 才算已交；三源共用 product_daily 表时不再互相带交。
+    // DSR 例外（任务 4W）：dsr_180d 内容快照与 imports.date_end（文件名日期）不一致会带偏，保持业务快照判定。
+    let todayImported: boolean
+    if (s.source === 'dsr') {
+      todayImported = !!lastDate && lastDate >= addDays(today, -s.delayDays)
+    } else {
+      const impEnd = (db.raw
+        .prepare("SELECT MAX(date_end) AS impEnd FROM imports WHERE shop_id=@shopId AND source_type=@source AND status='ok' AND date_end IS NOT NULL")
+        .get({ shopId: sid, source: s.source }) as { impEnd: string | null }).impEnd
+      todayImported = !!impEnd && impEnd >= addDays(today, -s.delayDays)
+    }
     out.push({
       source: s.source,
       label: s.label,
       lastDate,
       delayDays: s.delayDays,
-      todayImported: !!lastDate && lastDate >= addDays(today, -s.delayDays),
+      todayImported,
       coverageRange,
       rows: Number(agg.rows) || 0,
       lastSourceFile: imp?.sourceFile ?? null,
